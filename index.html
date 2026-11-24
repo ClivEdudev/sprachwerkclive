@@ -6,6 +6,7 @@
 <title>Sprachwerk · German</title>
 <meta name="description" content="Learn German your way: Goethe-A1 curriculum, real voices, pronunciation scoring, spaced repetition, games and role-plays.">
 <meta name="theme-color" content="#0c0e10">
+<script>try{var o=JSON.parse(localStorage.getItem('sprachwerk.v1')||'{}').settings||{};if(o.theme==='light'||o.theme==='dark')document.documentElement.dataset.theme=o.theme;document.documentElement.dataset.bg=o.bg||'aurora';}catch(e){}</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -46,10 +47,27 @@ LAYOUT: rail sidebar + one wide working column; phone gets a bottom bar and stac
 [hidden]{display:none!important}
 html{scroll-padding-top:72px;-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--body);overflow-x:clip;min-height:100vh}
-body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+/* modern background: slowly drifting aurora in Schwarz-Rot-Gold + a faint dot field */
+body::before{content:"";position:fixed;inset:-20vmax;pointer-events:none;z-index:0;
+ background:
+  radial-gradient(38vmax 30vmax at 78% 18%,var(--au1),transparent 62%),
+  radial-gradient(34vmax 28vmax at 18% 82%,var(--au2),transparent 62%),
+  radial-gradient(30vmax 26vmax at 62% 78%,var(--au3),transparent 60%),
+  radial-gradient(26vmax 22vmax at 26% 22%,var(--au4),transparent 60%);
+ filter:blur(30px) saturate(120%);animation:aurora 38s ease-in-out infinite alternate;will-change:transform}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+ background:radial-gradient(var(--dotc) 1px,transparent 1.4px) 0 0/26px 26px;
+ mask-image:radial-gradient(ellipse 90% 70% at 50% 0%,#000 10%,transparent 75%);-webkit-mask-image:radial-gradient(ellipse 90% 70% at 50% 0%,#000 10%,transparent 75%)}
+@keyframes aurora{0%{transform:translate3d(0,0,0) rotate(0deg) scale(1)}50%{transform:translate3d(-4vmax,3vmax,0) rotate(8deg) scale(1.08)}100%{transform:translate3d(3vmax,-2vmax,0) rotate(-6deg) scale(1.04)}}
+:root{--au1:rgba(232,197,71,.26);--au2:rgba(79,141,255,.22);--au3:rgba(255,93,108,.18);--au4:rgba(47,209,143,.11);--dotc:rgba(255,255,255,.07)}
+@media (prefers-color-scheme: light){:root:not([data-theme=dark]){--au1:rgba(232,197,71,.32);--au2:rgba(79,141,255,.18);--au3:rgba(255,93,108,.14);--au4:rgba(47,209,143,.10);--dotc:rgba(20,22,26,.08)}}
+:root[data-theme=light]{--au1:rgba(232,197,71,.32);--au2:rgba(79,141,255,.18);--au3:rgba(255,93,108,.14);--au4:rgba(47,209,143,.10);--dotc:rgba(20,22,26,.08)}
+:root[data-bg=still] body::before{animation:none}
+:root[data-bg=classic] body::before{inset:0;filter:none;animation:none;
  background:radial-gradient(900px 500px at 85% -10%,var(--goldSoft),transparent 60%),radial-gradient(700px 500px at -10% 110%,var(--ld18),transparent 60%),
  linear-gradient(var(--line) 1px,transparent 1px) 0 0/48px 48px,linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/48px 48px;
  mask-image:linear-gradient(180deg,#000 0,rgba(0,0,0,.35) 60%,transparent);opacity:.55}
+:root[data-bg=classic] body::after,:root[data-bg=plain] body::after,:root[data-bg=plain] body::before{display:none}
 a{color:inherit}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
@@ -377,6 +395,34 @@ details summary{cursor:pointer;color:var(--ink2)}
 textarea.input{min-height:120px;font:13px/1.4 ui-monospace,monospace}
 
 /* ---------- responsive ---------- */
+/* ---------- quick settings + translator ---------- */
+.top .gear{width:40px;height:40px;border-radius:12px}
+.top .gear .ic{transition:transform .4s}.top .gear:hover .ic{transform:rotate(60deg)}
+.qs-back{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.35);animation:fade .2s}
+.qs{position:fixed;top:0;right:0;bottom:0;z-index:81;width:min(380px,100vw);overflow-y:auto;padding:22px 20px calc(24px + env(safe-area-inset-bottom));background:var(--ld21);backdrop-filter:blur(20px);border-left:1px solid var(--line2);display:flex;flex-direction:column;gap:20px;animation:slidein .25s ease}
+.qs h3{display:flex;align-items:center;gap:8px}
+.qs .lbl{font-size:13px;color:var(--ink3);margin-bottom:8px;display:block}
+@keyframes slidein{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;border-radius:12px;background:var(--panel2);border:1px solid var(--line)}
+.seg button{border:0;background:transparent;border-radius:9px;min-height:38px;font-size:14px;color:var(--ink2);display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.seg button.on{background:var(--panel);color:var(--ink);box-shadow:0 0 0 1px var(--line2),0 1px 3px rgba(0,0,0,.12)}
+.trgrid{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:12px;align-items:stretch}
+.trpane{display:flex;flex-direction:column;gap:10px;min-height:240px}
+.trpane .hd{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.trpane .lang{font:500 16px var(--disp);display:flex;align-items:center;gap:8px}
+.trpane .lang .flag{width:22px;height:15px;border-radius:3px;flex:none;box-shadow:0 0 0 1px var(--line2)}
+.trpane textarea{flex:1;min-height:160px;resize:vertical;border:0;background:transparent;font-size:20px;line-height:1.45;padding:4px 0;outline:none}
+.trpane .out{flex:1;font-size:20px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+.trpane .out.ph{color:var(--ink3)}
+.trpane .ft{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.trswap{align-self:center;border-radius:50%}
+.trswap .ic{transition:transform .3s}.trswap:hover .ic{transform:rotate(180deg)}
+.trhist button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;padding:10px 0;border:0;border-bottom:1px solid var(--line);background:transparent}
+.trhist button:last-child{border-bottom:0}
+.trspin{width:16px;height:16px;border-radius:50%;border:2px solid var(--line2);border-top-color:var(--gold);animation:spin .8s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (max-width:760px){.trgrid{grid-template-columns:1fr}.trswap{justify-self:center;transform:rotate(90deg)}.trpane{min-height:0}.trpane textarea{min-height:120px}}
 @media (max-width:1080px){.cta{grid-template-columns:1fr 1fr}.cta a.go{grid-column:1/-1}.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:900px){
  .app{grid-template-columns:minmax(0,1fr)}
@@ -413,6 +459,7 @@ textarea.input{min-height:120px;font:13px/1.4 ui-monospace,monospace}
     <a class="nav" data-nav="path" href="#path"><svg class="ic" viewBox="0 0 24 24"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 6h8a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h8"/></svg>Linie A1</a>
     <a class="nav" data-nav="review" href="#review"><svg class="ic" viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/></svg>Review</a>
     <a class="nav" data-nav="practice" href="#practice"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/></svg>Practice</a>
+    <a class="nav" data-nav="translate" href="#translate"><svg class="ic" viewBox="0 0 24 24"><path d="M4 5h8M8 3v2M10 5c-.5 4-3 7-6 8.5M6 9c1 2 3 3.5 5 4.5"/><path d="M12 21l4.5-10L21 21M13.5 18h6"/></svg>Übersetzer</a>
     <div class="sep"></div><div class="grp">Labs</div>
     <a class="nav" data-nav="missions" href="#missions"><svg class="ic" viewBox="0 0 24 24"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg>Berlin Missions</a>
     <a class="nav" data-nav="shadow" href="#shadow"><svg class="ic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Shadow Studio</a>
@@ -435,6 +482,7 @@ textarea.input{min-height:120px;font:13px/1.4 ui-monospace,monospace}
       <span class="chip bolt" title="XP today / daily goal"><svg class="ic" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg><b id="tToday">0/50</b></span>
       <span class="chip hidem" title="Total XP"><b id="tXP">0</b>&nbsp;XP</span>
       <a class="chip hidem" href="#stats" id="tLevel" style="text-decoration:none">Lv 1</a>
+      <button class="ibtn gear" id="qsBtn" aria-label="Quick settings" title="Quick settings"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     </header>
     <main id="view" class="view"><noscript>Sprachwerk needs JavaScript to run.</noscript></main>
   </div>
@@ -971,6 +1019,13 @@ const dkey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).
 const hash = s => { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
 
 const ICONS = {
+  translate: '<path d="M4 5h8M8 3v2M10 5c-.5 4-3 7-6 8.5M6 9c1 2 3 3.5 5 4.5"/><path d="M12 21l4.5-10L21 21M13.5 18h6"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  swap: '<path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+  monitor: '<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>',
+  close: '<path d="M6 6l12 12M18 6L6 18"/>',
   home: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',
   path: '<circle cx="5" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 6h8a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h8"/>',
   review: '<path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/>',
@@ -1057,7 +1112,7 @@ function greetDe(name) {
 
 /* ---------- state & persistence ---------- */
 const KEY = 'sprachwerk.v1';
-const DEFAULT = () => ({ v: 1, name: 'Clive', goal: 50, xp: 0, days: {}, cards: {}, units: {}, skills: {}, games: {}, missions: {}, shadow: {}, settings: { engine: 'auto', voiceURI: '', rate: 1, sfx: true }, updated: 0, created: Date.now() });
+const DEFAULT = () => ({ v: 1, name: 'Clive', goal: 50, xp: 0, days: {}, cards: {}, units: {}, skills: {}, games: {}, missions: {}, shadow: {}, settings: { engine: 'auto', voiceURI: '', rate: 1, sfx: true, theme: 'system', bg: 'aurora', trLang: 'en', trDir: 'de', trAuto: true }, trh: [], updated: 0, created: Date.now() });
 function hydrate(o) { const d = DEFAULT(); const s = Object.assign(d, o || {}); s.settings = Object.assign(DEFAULT().settings, (o && o.settings) || {}); return s; }
 let S = (() => { try { const r = localStorage.getItem(KEY); if (r) return hydrate(JSON.parse(r)); } catch (e) { } return DEFAULT(); })();
 const Cloud = { ref: null, busy: false, dirty: false, status: 'local' };
@@ -1541,7 +1596,7 @@ function renderQ(slot, q) {
 let CLEAN = [];
 const onLeave = f => CLEAN.push(f);
 const SHORT = [['Laute', 'Sounds'], ['Hallo!', 'Greetings'], ['Woher?', 'Origins'], ['Zahlen', 'Numbers'], ['Familie', 'Family'], ['Essen', 'Food'], ['Mein Tag', 'Daily life'], ['Stadt', 'City'], ['Wohnen', 'Home'], ['Einkaufen', 'Shopping'], ['Freizeit', 'Free time'], ['Körper', 'Health'], ['Reisen', 'Travel']];
-const TITLES = { home: 'Start', path: 'Linie A1', review: 'Daily review', practice: 'Practice', games: 'Games', sounds: 'Sound Lab', missions: 'Berlin Missions', shadow: 'Shadow Studio', lazy: 'Lazy Mode', galaxy: 'Memory Galaxy', bridge: 'English Bridge', radar: 'Genus Radar', stats: 'Progress', method: 'The method', setup: 'Settings', more: 'Everything' };
+const TITLES = { home: 'Start', path: 'Linie A1', review: 'Daily review', practice: 'Practice', games: 'Games', sounds: 'Sound Lab', missions: 'Berlin Missions', shadow: 'Shadow Studio', lazy: 'Lazy Mode', galaxy: 'Memory Galaxy', bridge: 'English Bridge', radar: 'Genus Radar', stats: 'Progress', method: 'The method', setup: 'Settings', more: 'Everything', translate: 'Übersetzer' };
 const VIEWS = {};
 function route() {
   CLEAN.forEach(f => { try { f(); } catch (e) { } }); CLEAN = [];
@@ -1921,7 +1976,178 @@ VIEWS.method = v => {
 /* ================= MORE (mobile menu) ================= */
 VIEWS.more = v => {
   v.innerHTML = `<h1>Everything</h1><div class="tiles" style="margin-top:18px">
-  ${tile('#practice', 'practice', 'Practice', 'Drill any skill on any word pool.', 'var(--goldInk)')}${tile('#missions', 'missions', 'Berlin Missions', 'Voiced role-play scenarios.', 'var(--redInk)')}${tile('#shadow', 'mic', 'Shadow Studio', 'Speak along, get scored.', 'var(--goldInk)')}${tile('#lazy', 'lazy', 'Lazy Mode', 'Hands-free listening loop.', 'var(--blueInk)')}${tile('#galaxy', 'galaxy', 'Memory Galaxy', 'Your memory as stars.', 'var(--blueInk)')}${tile('#bridge', 'bridge', 'English Bridge', 'Decode German via English.', 'var(--greenInk)')}${tile('#radar', 'radar', 'Genus Radar', 'Predict der/die/das.', 'var(--violet)')}${tile('#sounds', 'sound', 'Sound Lab', 'Alphabet and sounds.', 'var(--blueInk)')}${tile('#stats', 'stats', 'Progress', 'Stats, streaks, forecast.', 'var(--goldInk)')}${tile('#method', 'method', 'The method', 'The research behind it.', 'var(--greenInk)')}${tile('#setup', 'setup', 'Settings', 'Voice, goal, backup.', 'var(--ink2)')}</div>`;
+  ${tile('#translate', 'translate', 'Übersetzer', 'Translate German and English, hear it, save it.', 'var(--blueInk)')}${tile('#practice', 'practice', 'Practice', 'Drill any skill on any word pool.', 'var(--goldInk)')}${tile('#missions', 'missions', 'Berlin Missions', 'Voiced role-play scenarios.', 'var(--redInk)')}${tile('#shadow', 'mic', 'Shadow Studio', 'Speak along, get scored.', 'var(--goldInk)')}${tile('#lazy', 'lazy', 'Lazy Mode', 'Hands-free listening loop.', 'var(--blueInk)')}${tile('#galaxy', 'galaxy', 'Memory Galaxy', 'Your memory as stars.', 'var(--blueInk)')}${tile('#bridge', 'bridge', 'English Bridge', 'Decode German via English.', 'var(--greenInk)')}${tile('#radar', 'radar', 'Genus Radar', 'Predict der/die/das.', 'var(--violet)')}${tile('#sounds', 'sound', 'Sound Lab', 'Alphabet and sounds.', 'var(--blueInk)')}${tile('#stats', 'stats', 'Progress', 'Stats, streaks, forecast.', 'var(--goldInk)')}${tile('#method', 'method', 'The method', 'The research behind it.', 'var(--greenInk)')}${tile('#setup', 'setup', 'Settings', 'Voice, goal, backup.', 'var(--ink2)')}</div>`;
+};
+
+
+/* ================= APPEARANCE, QUICK SETTINGS ================= */
+const TR_LANGS = { en: ['English', 'en-GB'], ru: ['Русский (Russian)', 'ru-RU'], uz: ["O'zbek (Uzbek)", 'uz-UZ'] };
+const FLAGS = {
+  de: '<svg class="flag" viewBox="0 0 5 3"><rect width="5" height="1" fill="#111"/><rect y="1" width="5" height="1" fill="#dd0000"/><rect y="2" width="5" height="1" fill="#ffce00"/></svg>',
+  en: '<svg class="flag" viewBox="0 0 60 30"><rect width="60" height="30" fill="#012169"/><path d="M0 0l60 30M60 0L0 30" stroke="#fff" stroke-width="6"/><path d="M0 0l60 30M60 0L0 30" stroke="#C8102E" stroke-width="2.5"/><path d="M30 0v30M0 15h60" stroke="#fff" stroke-width="10"/><path d="M30 0v30M0 15h60" stroke="#C8102E" stroke-width="6"/></svg>',
+  ru: '<svg class="flag" viewBox="0 0 3 2"><rect width="3" height="2" fill="#fff"/><rect y=".667" width="3" height=".667" fill="#0039a6"/><rect y="1.333" width="3" height=".667" fill="#d52b1e"/></svg>',
+  uz: '<svg class="flag" viewBox="0 0 6 3"><rect width="6" height="1" fill="#1eb5e8"/><rect y="1" width="6" height="1" fill="#fff"/><rect y="2" width="6" height="1" fill="#1eb53a"/><rect y=".95" width="6" height=".1" fill="#ce1126"/><rect y="1.95" width="6" height=".1" fill="#ce1126"/></svg>'
+};
+function applyLook() {
+  const r = document.documentElement, t = S.settings.theme, b = S.settings.bg;
+  if (t === 'light' || t === 'dark') r.dataset.theme = t; else delete r.dataset.theme;
+  r.dataset.bg = b || 'aurora';
+  const dark = t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = dark ? '#0c0e10' : '#efeee9';
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener && matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyLook);
+const segHTML = (key, opts) => `<div class="seg" role="group" data-seg="${key}">${opts.map(([v, l, ic]) => `<button type="button" data-v="${v}" class="${S.settings[key] === v ? 'on' : ''}" aria-pressed="${S.settings[key] === v}">${ic ? icon(ic, 'sm') : ''}${l}</button>`).join('')}</div>`;
+const appearanceHTML = () => `<div><span class="lbl">Theme</span>${segHTML('theme', [['system', 'Auto', 'monitor'], ['light', 'Light', 'sun'], ['dark', 'Dark', 'moon']])}</div>
+  <div><span class="lbl">Background</span>${segHTML('bg', [['aurora', 'Aurora'], ['still', 'Still'], ['classic', 'Grid'], ['plain', 'Plain']])}<p class="faint tiny" style="margin-top:6px">Aurora drifts slowly; Still keeps the colours without motion.</p></div>`;
+const translatorPrefsHTML = () => `<div><span class="lbl">Translate German to and from</span><select class="input" data-pref="trLang">${Object.entries(TR_LANGS).map(([k, [l]]) => `<option value="${k}" ${S.settings.trLang === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>
+  <label class="row small"><input type="checkbox" data-pref="trAuto" ${S.settings.trAuto ? 'checked' : ''}> Translate while I type</label>`;
+function bindPrefs(root) {
+  $$('[data-seg]', root).forEach(g => g.addEventListener('click', e => {
+    const b = e.target.closest('[data-v]'); if (!b) return;
+    S.settings[g.dataset.seg] = b.dataset.v; save(); applyLook();
+    $$('[data-seg="' + g.dataset.seg + '"] [data-v]').forEach(x => { const on = x.dataset.v === b.dataset.v; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); });
+  }));
+  $$('[data-pref]', root).forEach(el => el.addEventListener('change', () => {
+    const k = el.dataset.pref; S.settings[k] = el.type === 'checkbox' ? el.checked : el.value; save();
+    $$('[data-pref="' + k + '"]').forEach(x => { if (x !== el) { if (x.type === 'checkbox') x.checked = el.checked; else x.value = el.value; } });
+    if (k === 'trLang' && /^#translate/.test(location.hash || '')) route();
+  }));
+}
+function openQuick() {
+  if ($('.qs')) return closeQuick();
+  const back = document.createElement('div'); back.className = 'qs-back';
+  const p = document.createElement('aside'); p.className = 'qs'; p.setAttribute('role', 'dialog'); p.setAttribute('aria-label', 'Quick settings');
+  p.innerHTML = `<div class="row between"><h3>${icon('gear')} Quick settings</h3><button class="ibtn" data-x aria-label="Close">${icon('close')}</button></div>
+  ${appearanceHTML()}
+  <div class="stack" style="gap:10px"><h3>${icon('translate')} Translator</h3>${translatorPrefsHTML()}<a class="btn" href="#translate" data-x>${icon('translate', 'sm')} Open Übersetzer</a></div>
+  <div class="stack" style="gap:10px"><h3>${icon('speaker')} Voice speed</h3><input type="range" min="0.6" max="1.3" step="0.05" value="${S.settings.rate}" data-rate aria-label="Voice speed"><div class="row between small"><span class="faint">Slower</span><b data-ratev>${S.settings.rate}×</b><span class="faint">Faster</span></div></div>
+  <label class="row small"><input type="checkbox" data-pref="sfx" ${S.settings.sfx ? 'checked' : ''}> Sound effects</label>
+  <a class="btn ghost" href="#setup" data-x style="margin-top:auto">All settings ${icon('right', 'sm')}</a>`;
+  bindPrefs(p);
+  $('[data-rate]', p).oninput = e => { S.settings.rate = +e.target.value; $('[data-ratev]', p).textContent = S.settings.rate + '×'; save(); };
+  p.addEventListener('click', e => { if (e.target.closest('[data-x]')) closeQuick(); });
+  back.onclick = closeQuick;
+  document.body.append(back, p);
+  $('#qsBtn').setAttribute('aria-expanded', 'true');
+  setTimeout(() => { const f = $('.seg .on', p); f && f.focus(); }, 30);
+}
+function closeQuick() { $('.qs') && $('.qs').remove(); $('.qs-back') && $('.qs-back').remove(); $('#qsBtn') && $('#qsBtn').setAttribute('aria-expanded', 'false'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('.qs')) closeQuick(); });
+
+/* ================= ÜBERSETZER (translator) ================= */
+const TR_CACHE = new Map();
+const normW = t => (t || '').toLowerCase().replace(/^(der|die|das|ein|eine|to)\s+/, '').replace(/[.,!?;:"„“()]/g, '').trim();
+/* offline / course dictionary: exact word or phrase from the course */
+function courseLookup(text, from) {
+  const q = normW(text); if (!q) return [];
+  const hits = [];
+  for (const w of WORDS) {
+    const de = normW(w.de), en = (w.en || '').toLowerCase().split(/[,;/]/).map(normW);
+    if (from === 'de' ? (de === q || (w.pl && normW(w.pl) === q)) : en.includes(q)) hits.push(w);
+    if (hits.length >= 4) break;
+  }
+  if (!hits.length && q.includes(' ')) { /* single words inside a sentence */
+    const toks = q.split(/\s+/).filter(t => t.length > 2);
+    for (const w of WORDS) { if (from === 'de' && toks.includes(normW(w.de))) hits.push(w); if (hits.length >= 6) break; }
+  }
+  return hits;
+}
+async function fetchJSON(url, ms = 8000) {
+  const c = new AbortController(); const t = setTimeout(() => c.abort(), ms);
+  try { const r = await fetch(url, { signal: c.signal }); if (!r.ok) throw new Error('http ' + r.status); return await r.json(); } finally { clearTimeout(t); }
+}
+async function translateText(text, from, to) {
+  const k = from + '|' + to + '|' + text; if (TR_CACHE.has(k)) return TR_CACHE.get(k);
+  let out = null, src = '';
+  try {
+    const j = await fetchJSON('https://translate.googleapis.com/translate_a/single?client=gtx&dt=t&sl=' + from + '&tl=' + to + '&q=' + encodeURIComponent(text));
+    out = (j && j[0] || []).map(x => x[0]).join('').trim(); src = 'Google Translate';
+  } catch (e) { out = null; }
+  if (!out) {
+    try {
+      const j = await fetchJSON('https://api.mymemory.translated.net/get?langpair=' + from + '|' + to + '&q=' + encodeURIComponent(text.slice(0, 500)));
+      const t = j && j.responseData && j.responseData.translatedText;
+      if (t && j.responseStatus == 200 && !/MYMEMORY WARNING|QUERY LENGTH LIMIT/i.test(t)) { out = t.trim(); src = 'MyMemory'; }
+    } catch (e) { }
+  }
+  if (!out) { /* offline: course dictionary */
+    const h = courseLookup(text, from).filter(w => from === 'de' ? normW(w.de) === normW(text) || normW(w.pl) === normW(text) : true);
+    if (h.length && (from === 'de' ? to === 'en' : from === 'en')) { out = from === 'de' ? h[0].en : full(h[0]); src = 'Sprachwerk course (offline)'; }
+  }
+  const res = out ? { text: out, src } : null;
+  if (res) { TR_CACHE.set(k, res); if (TR_CACHE.size > 200) TR_CACHE.delete(TR_CACHE.keys().next().value); }
+  return res;
+}
+VIEWS.translate = v => {
+  const L = S.settings.trLang in TR_LANGS ? S.settings.trLang : 'en';
+  let fromDe = S.settings.trDir !== 'other';
+  const name = c => c === 'de' ? 'Deutsch' : TR_LANGS[c][0];
+  v.innerHTML = `<div class="row between"><div><h1>Übersetzer</h1><p class="muted" style="margin-top:6px">Translate between German and ${esc(TR_LANGS[L][0].replace(/ \(.*\)/, ''))}. Hear the German, then save words to your review.</p></div><button class="btn sm ghost" data-qs>${icon('gear', 'sm')} Languages</button></div>
+  <div class="trgrid" style="margin-top:20px">
+    <div class="card trpane"><div class="hd"><span class="lang" data-lfrom></span><button class="btn sm ghost" data-clear hidden>${icon('close', 'sm')} Clear</button></div>
+      <textarea id="trIn" maxlength="2000" placeholder="Type or paste text…" spellcheck="false" aria-label="Text to translate"></textarea>
+      <div class="ft"><button class="btn sm" data-sayin>${icon('speaker', 'sm')} Listen</button><span class="faint tiny" style="margin-left:auto" data-count>0 / 2000</span></div></div>
+    <button class="ibtn trswap" data-swap aria-label="Swap languages" title="Swap languages">${icon('swap')}</button>
+    <div class="card trpane" style="background:var(--panel2)"><div class="hd"><span class="lang" data-lto></span><span data-busy></span></div>
+      <div class="out ph" id="trOut" aria-live="polite">Translation appears here</div>
+      <div class="ft"><button class="btn sm" data-sayout disabled>${icon('speaker', 'sm')} Listen</button><button class="btn sm" data-copy disabled>${icon('copy', 'sm')} Copy</button><button class="btn sm pri" data-go>Translate</button><span class="faint tiny" data-src style="margin-left:auto"></span></div></div>
+  </div>
+  <div id="trCourse"></div>
+  <section class="sec"><div class="row between"><h2>Recent</h2>${S.trh.length ? '<button class="btn sm ghost" data-hclear>Clear history</button>' : ''}</div><div class="card trhist" style="margin-top:12px;padding:6px 18px" id="trHist"></div></section>`;
+  const inp = $('#trIn', v), out = $('#trOut', v);
+  let last = null, tmr, seq = 0;
+  const from = () => fromDe ? 'de' : L, to = () => fromDe ? L : 'de';
+  const speakLang = c => c === 'de' ? 'de' : c === 'en' ? 'en' : null;
+  function labels() {
+    $('[data-lfrom]', v).innerHTML = FLAGS[from()] + esc(name(from()));
+    $('[data-lto]', v).innerHTML = FLAGS[to()] + esc(name(to()));
+    $('[data-sayin]', v).hidden = !speakLang(from());
+    $('[data-sayout]', v).hidden = !speakLang(to());
+    inp.placeholder = fromDe ? 'Schreib etwas auf Deutsch… e.g. Wo ist der Bahnhof?' : 'Type something… e.g. Where is the train station?';
+  }
+  function renderHist() {
+    const h = $('#trHist', v);
+    h.innerHTML = S.trh.length ? S.trh.slice(0, 10).map((x, k) => `<button data-h="${k}"><b>${esc(x.a)}</b><span class="muted small">${esc(x.b)}</span></button>`).join('') : '<p class="faint small" style="padding:12px 0">Your translations will be listed here.</p>';
+  }
+  function renderCourse(text) {
+    const box = $('#trCourse', v); const hits = text.trim() ? courseLookup(text, from() === 'de' ? 'de' : (from() === 'en' ? 'en' : 'x')) : [];
+    if (!hits.length) { box.innerHTML = ''; return; }
+    box.innerHTML = `<section class="sec"><h2>From your course</h2><div class="stack" style="margin-top:12px;gap:10px">${hits.map(w => { const known = !!S.cards[w.id]; return `<div class="card row between" style="padding:14px 18px"><div><div style="font:500 20px var(--disp)">${wordHTML(w)}</div><div class="muted small">${esc(w.en)}${w.ex ? ` · <i>${esc(w.ex)}</i>` : ''}</div></div><div class="row"><button class="ibtn" data-say="${esc(full(w))}" aria-label="Listen">${icon('speaker', 'sm')}</button><button class="btn sm ${known ? '' : 'pri'}" data-add="${esc(w.id)}" ${known ? 'disabled' : ''}>${known ? 'In your memory' : 'Add to review'}</button></div></div>`; }).join('')}</div></section>`;
+  }
+  async function run(force) {
+    const text = inp.value.trim(); const my = ++seq;
+    $('[data-clear]', v).hidden = !inp.value; $('[data-count]', v).textContent = inp.value.length + ' / 2000';
+    renderCourse(text);
+    if (!text) { out.textContent = 'Translation appears here'; out.classList.add('ph'); $('[data-src]', v).textContent = ''; $('[data-busy]', v).innerHTML = ''; ['sayout', 'copy'].forEach(b => $('[data-' + b + ']', v).disabled = true); last = null; return; }
+    $('[data-busy]', v).innerHTML = '<span class="trspin" aria-label="Translating"></span>';
+    const r = await translateText(text, from(), to());
+    if (my !== seq) return;
+    $('[data-busy]', v).innerHTML = '';
+    if (!r) { out.textContent = navigator.onLine === false ? 'You are offline. Only words from your course can be translated right now.' : 'Could not translate right now. Please try again in a moment.'; out.classList.add('ph'); $('[data-src]', v).textContent = ''; return; }
+    out.textContent = r.text; out.classList.remove('ph'); $('[data-src]', v).textContent = 'via ' + r.src;
+    ['sayout', 'copy'].forEach(b => $('[data-' + b + ']', v).disabled = false);
+    last = { a: text, b: r.text, f: from(), t: to() };
+    if (force || !S.trh.length || S.trh[0].a !== text) {
+      S.trh = [last, ...S.trh.filter(x => x.a !== text)].slice(0, 20); save(); renderHist();
+    }
+  }
+  inp.addEventListener('input', () => { clearTimeout(tmr); $('[data-clear]', v).hidden = !inp.value; $('[data-count]', v).textContent = inp.value.length + ' / 2000'; if (S.settings.trAuto) tmr = setTimeout(() => run(false), 650); });
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); clearTimeout(tmr); run(true); } });
+  $('[data-go]', v).onclick = () => { clearTimeout(tmr); run(true); };
+  $('[data-swap]', v).onclick = () => { fromDe = !fromDe; S.settings.trDir = fromDe ? 'de' : 'other'; save(); if (last) inp.value = last.b; labels(); run(false); inp.focus(); };
+  $('[data-clear]', v).onclick = () => { inp.value = ''; run(false); inp.focus(); };
+  $('[data-sayin]', v).onclick = () => inp.value.trim() && Voice.speak(inp.value.trim(), { lang: speakLang(from()) });
+  $('[data-sayout]', v).onclick = () => last && Voice.speak(last.b, { lang: speakLang(to()) });
+  $('[data-copy]', v).onclick = () => last && copyText(last.b);
+  $('[data-qs]', v).onclick = openQuick;
+  v.addEventListener('click', e => {
+    const s = e.target.closest('[data-say]'); if (s) { Voice.speak(s.dataset.say); return; }
+    const a = e.target.closest('[data-add]'); if (a) { grade(a.dataset.add, 2); addXP(5, a); a.textContent = 'In your memory'; a.disabled = true; a.classList.remove('pri'); toast('Added to your review'); return; }
+    const h = e.target.closest('[data-h]'); if (h) { const x = S.trh[+h.dataset.h]; if (!x) return; fromDe = x.f === 'de'; S.settings.trDir = fromDe ? 'de' : 'other'; inp.value = x.a; labels(); run(false); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    if (e.target.closest('[data-hclear]')) { S.trh = []; save(); renderHist(); e.target.closest('[data-hclear]').remove(); }
+  });
+  labels(); renderHist();
+  setTimeout(() => inp.focus({ preventScroll: true }), 50);
 };
 
 /* ================= SETTINGS ================= */
@@ -1929,6 +2155,8 @@ VIEWS.setup = v => {
   const deV = Voice.voices.filter(x => /^de/i.test(x.lang));
   v.innerHTML = `<h1>Settings</h1>
   <div class="grid g2" style="margin-top:20px">
+    <div class="card stack"><h3>Appearance</h3>${appearanceHTML()}</div>
+    <div class="card stack"><h3>Translator</h3>${translatorPrefsHTML()}</div>
     <div class="card stack"><h3>You</h3><label class="muted small" for="nm">Name used in greetings and dialogues</label><input id="nm" class="input" value="${esc(S.name)}" maxlength="30"><label class="muted small" for="gl">Daily goal</label><select id="gl" class="input">${[[20, 'Casual · 20 XP'], [50, 'Regular · 50 XP'], [100, 'Serious · 100 XP'], [150, 'Intense · 150 XP']].map(([n, l]) => `<option value="${n}" ${S.goal === n ? 'selected' : ''}>${l}</option>`).join('')}</select><label class="row small"><input type="checkbox" id="sfx" ${S.settings.sfx ? 'checked' : ''}> Sound effects</label></div>
     <div class="card stack"><h3>Voice</h3><div class="note">Now speaking with: <b>${esc(Voice.label())}</b></div><label class="muted small" for="eng">Engine</label><select id="eng" class="input"><option value="auto">Automatic — best available</option><option value="browser">This device's German voice</option><option value="claude" ${Voice.tts ? '' : 'disabled'}>Claude voice${Voice.tts ? '' : ' (not available here)'}</option></select>
     ${deV.length ? `<label class="muted small" for="vc">Device German voice</label><select id="vc" class="input">${deV.map(x => `<option value="${esc(x.voiceURI)}" ${Voice.de && Voice.de.voiceURI === x.voiceURI ? 'selected' : ''}>${esc(x.name)} (${esc(x.lang)})</option>`).join('')}</select>` : `<div class="note">No German voice installed on this device. ${Voice.tts ? 'The Claude voice is used instead.' : 'Install a German voice in your system settings (Windows: Settings → Time & language → Speech; macOS: Accessibility → Spoken content), or use Chrome/Edge which include natural German voices.'}</div>`}
@@ -1937,6 +2165,7 @@ VIEWS.setup = v => {
     <div class="card stack"><h3>Sync & backup</h3><div class="row"><span class="dot syncdot"></span><span class="synctxt muted small"></span></div><p class="muted small">${FRAMED ? 'Progress is saved privately to your Claude account when available, so it follows you between devices, and also on this device.' : 'On this website your progress lives in this browser. Download a backup now and then — and use it to move your progress to another phone or computer.'}</p><div class="row">${FRAMED ? '' : `<button class="btn pri" data-dl>${icon('copy', 'sm')} Download backup</button><label class="btn">Restore from file<input type="file" accept="application/json,.json" data-file hidden></label>`}<button class="btn" data-exp>${icon('copy', 'sm')} Copy backup</button><button class="btn" data-imp>Paste backup</button></div><div data-impbox></div>${!FRAMED ? `<div data-install ${window.__swInstall ? '' : 'hidden'}><hr class="soft"><button class="btn" data-inst>Install Sprachwerk as an app</button><p class="faint tiny" style="margin-top:6px">Adds an icon to your home screen or desktop and works offline.</p></div>` : ''}<hr class="soft"><button class="btn" data-reset style="color:var(--bad)">Reset all progress</button></div>
   </div>`;
   setSync(Cloud.status);
+  bindPrefs(v);
   $('#eng', v).value = S.settings.engine;
   $('#nm', v).onchange = e => { S.name = e.target.value.trim().slice(0, 30) || 'Clive'; save(); };
   $('#gl', v).onchange = e => { S.goal = +e.target.value; save(); refreshTop(); };
@@ -2341,6 +2570,9 @@ document.addEventListener('click', e => {
   if (a && a.getAttribute('href') === (location.hash || '#home')) { e.preventDefault(); route(); }
 });
 window.addEventListener('error', e => console.error('Sprachwerk error:', e.message));
+applyLook();
+$('#qsBtn').onclick = openQuick;
+window.addEventListener('hashchange', closeQuick);
 Voice.init();
 Ear.init();
 refreshShell();

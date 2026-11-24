@@ -1,6 +1,6 @@
 # Sprachwerk — German learning app
 
-Static site, no build step. Version 202611242116.
+Static site, no build step. Version 202611241830.
 
 ## Deploy on Netlify
 1. Go to https://app.netlify.com/drop
