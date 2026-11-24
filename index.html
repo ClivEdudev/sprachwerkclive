@@ -1157,7 +1157,14 @@ async function claudeUse(name) {
 /* ---------- Google sign-in + progress sync (Firebase) on the standalone website ----------
    Paste the web app config from Firebase console → Project settings → Your apps.
    These values are public identifiers, not secrets: Firestore security rules protect the data. */
-const FIREBASE_CONFIG = null;
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyCmfvgGyC1RfCyVake8KRpdK1KhuYeQ6UQ',
+  authDomain: 'sprachwerk-9d756.firebaseapp.com',
+  projectId: 'sprachwerk-9d756',
+  storageBucket: 'sprachwerk-9d756.firebasestorage.app',
+  messagingSenderId: '113538504236',
+  appId: '1:113538504236:web:03a68b26f8aae1b7506389'
+};
 const FB_VER = '10.12.2';
 const Account = {
   ready: false, user: null, busy: false, err: '', fb: null,
