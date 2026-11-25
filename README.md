@@ -13,3 +13,14 @@ To update later: open the site in Netlify → Deploys → drag the new folder/zi
 - Works offline after the first visit and can be installed (Settings → Install, or the browser's "Add to Home Screen").
 - Pronunciation scoring uses the browser's German speech recognition: Chrome on desktop or Android works best. Allow the microphone when asked.
 - Progress is stored in this browser (localStorage). Use Settings → Download backup to keep a copy or move to another device.
+
+## Google sign-in and progress sync
+
+Same setup as ClivEdu: Google's sign-in button on the page, a Netlify function (`netlify/functions/api.mjs`) that checks the sign-in with Google, and Netlify Blobs to store each person's progress. No Firebase.
+
+1. Google Cloud Console → **APIs & Services → Credentials → Create credentials → OAuth client ID**, type **Web application**.
+2. Under **Authorized JavaScript origins** add `https://sprachwerkclive.netlify.app`.
+3. In Netlify → **Site configuration → Environment variables** add `GOOGLE_CLIENT_ID` with that client ID, then redeploy.
+4. Optional: `AUTH_SECRET` (long random text). Without it the site makes its own and stores it.
+
+Progress from different devices is merged (never overwritten), on the device and again on the server.
