@@ -1155,85 +1155,95 @@ async function claudeUse(name) {
   if (!(await claudeReady())) return null;
   try { return await window.claude.use(name); } catch (e) { return null; }
 }
-/* ---------- Google sign-in + progress sync (Firebase) on the standalone website ----------
-   Paste the web app config from Firebase console → Project settings → Your apps.
-   These values are public identifiers, not secrets: Firestore security rules protect the data. */
-const FIREBASE_CONFIG = {
-  apiKey: 'AIzaSyCmfvgGyC1RfCyVake8KRpdK1KhuYeQ6UQ',
-  authDomain: 'sprachwerk-9d756.firebaseapp.com',
-  projectId: 'sprachwerk-9d756',
-  storageBucket: 'sprachwerk-9d756.firebasestorage.app',
-  messagingSenderId: '113538504236',
-  appId: '1:113538504236:web:03a68b26f8aae1b7506389'
+/* ---------- Google sign-in + progress sync on the standalone website (same approach as ClivEdu) ----------
+   Google's own sign-in button (Google Identity Services) gives us an ID token; the Netlify function
+   /api checks it with Google and stores progress in Netlify Blobs. The Google client ID lives in the
+   GOOGLE_CLIENT_ID environment variable on Netlify; /api/config hands it to the page. */
+const AUTH_KEY = 'sprachwerk.auth';
+const api = async (path, opt = {}) => {
+  const tok = Account.token;
+  let r;
+  try { r = await fetch('/api' + path, { ...opt, headers: { 'content-type': 'application/json', ...(tok ? { authorization: 'Bearer ' + tok } : {}), ...(opt.headers || {}) } }); }
+  catch (e) { const x = new Error('network'); x.code = 'unavailable'; throw x; }
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error(body.error || 'http ' + r.status); e.code = r.status === 401 ? 'signed-out' : r.status >= 500 ? 'unavailable' : String(r.status); throw e; }
+  return body;
 };
-const FB_VER = '10.12.2';
 const Account = {
-  ready: false, user: null, busy: false, err: '', fb: null,
-  enabled: () => !FRAMED && !!FIREBASE_CONFIG,
-  async load() {
-    if (this.fb) return this.fb;
-    const base = 'https://www.gstatic.com/firebasejs/' + FB_VER + '/';
-    const [app, auth, fs] = await Promise.all([import(base + 'firebase-app.js'), import(base + 'firebase-auth.js'), import(base + 'firebase-firestore.js')]);
-    const a = app.initializeApp(FIREBASE_CONFIG);
-    const au = auth.getAuth(a); try { await auth.setPersistence(au, auth.browserLocalPersistence); } catch (e) { }
-    this.fb = { auth, fs, au, db: fs.getFirestore(a) };
-    return this.fb;
-  },
+  ready: false, user: null, token: '', busy: false, err: '', clientId: null, gis: null,
+  enabled: () => !FRAMED,
   async init() {
-    if (!this.enabled()) return setSync('local');
-    try { await this.load(); } catch (e) { this.err = 'Could not load Google sign-in (offline?)'; this.ready = true; refreshAccountUI(); return setSync('local'); }
-    const { auth, au } = this.fb;
-    try { await auth.getRedirectResult(au); } catch (e) { this.err = authMsg(e); }
-    auth.onAuthStateChanged(au, async u => {
-      this.ready = true; this.user = u || null; refreshAccountUI();
-      Cloud.ready = false; clearTimeout(Cloud.retry);
-      if (!u) { Cloud.ref = null; return setSync('local'); }
-      const { fs, db } = this.fb; const d = fs.doc(db, 'users', u.uid);
-      Cloud.ref = {
-        set: o => fs.setDoc(d, { at: o.at, json: JSON.stringify(o.s), name: u.displayName || '', v: 1 }),
-        get: async () => { const sn = await fs.getDoc(d); const x = sn.exists() ? sn.data() : null; return { exists: !!x, data: () => x && { at: x.at, s: JSON.parse(x.json || 'null') } }; }
-      };
-      await pullCloud();
+    try { const a = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); if (a && a.token) { this.token = a.token; this.user = a.user || {}; } } catch (e) { }
+    if (this.user) this.connect();
+    try { const c = await api('/config'); this.clientId = c.googleClientId || null; }
+    catch (e) { this.err = 'Could not reach the sync server (offline?)'; }
+    if (!this.clientId && !this.err) this.err = 'Google sign-in is not switched on yet (GOOGLE_CLIENT_ID is missing on Netlify).';
+    this.ready = true; refreshAccountUI();
+    if (!this.user && this.clientId) this.loadGis().then(() => this.paint()).catch(() => { this.err = 'Could not load Google sign-in (offline?)'; refreshAccountUI(); });
+    if (!this.user) setSync('local');
+  },
+  loadGis() {
+    if (!this.gis) this.gis = new Promise((res, rej) => {
+      if (window.google && google.accounts && google.accounts.id) return res();
+      const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true;
+      s.onload = () => res(); s.onerror = () => { this.gis = null; rej(new Error('gis')); }; document.head.appendChild(s);
+    }).then(() => { google.accounts.id.initialize({ client_id: this.clientId, callback: r => this.onCredential(r), auto_select: false, ux_mode: 'popup' }); });
+    return this.gis;
+  },
+  /* draw Google's button into every empty [data-gbtn] slot */
+  paint() {
+    if (!this.gis || !(window.google && google.accounts && google.accounts.id)) return;
+    $$('[data-gbtn]:not([data-drawn])').forEach(el => {
+      el.dataset.drawn = '1'; el.innerHTML = '';
+      try { google.accounts.id.renderButton(el, { type: 'standard', theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill', logo_alignment: 'left' }); } catch (e) { }
     });
   },
-  async signIn() {
-    if (this.busy) return; this.busy = true; this.err = ''; refreshAccountUI();
+  async onCredential(r) {
+    this.busy = true; this.err = ''; refreshAccountUI();
     try {
-      const { auth, au } = await this.load();
-      const prov = new auth.GoogleAuthProvider(); prov.setCustomParameters({ prompt: 'select_account' });
-      try { await auth.signInWithPopup(au, prov); }
-      catch (e) { if (e && /popup-blocked|operation-not-supported|web-storage/.test(e.code || '')) await auth.signInWithRedirect(au, prov); else throw e; }
-    } catch (e) { if (!/popup-closed|cancelled-popup/.test((e && e.code) || '')) this.err = authMsg(e); }
-    this.busy = false; refreshAccountUI();
+      const out = await api('/auth/google', { method: 'POST', body: JSON.stringify({ credential: r.credential }) });
+      this.token = out.token; this.user = out.user || {};
+      try { localStorage.setItem(AUTH_KEY, JSON.stringify({ token: this.token, user: this.user })); } catch (e) { }
+      this.busy = false; refreshAccountUI(); toast('Signed in as ' + (this.user.name || this.user.email || 'you'));
+      this.connect();
+    } catch (e) { this.busy = false; this.err = e.code === 'unavailable' ? 'No connection to the sync server. Try again when you are online.' : 'Sign-in failed. Please try again.'; refreshAccountUI(); }
+  },
+  connect() {
+    Cloud.ready = false; clearTimeout(Cloud.retry);
+    Cloud.ref = {
+      set: o => api('/progress', { method: 'PUT', body: JSON.stringify({ at: o.at, s: o.s }) }),
+      get: async () => { const x = await api('/progress'); return { exists: !!(x && x.s), data: () => (x && x.s ? { at: x.at, s: x.s } : null) }; }
+    };
+    pullCloud();
+  },
+  forget() {
+    clearTimeout(saveT); clearTimeout(Cloud.retry);
+    Cloud.ref = null; Cloud.ready = false; this.token = ''; this.user = null;
+    try { localStorage.removeItem(AUTH_KEY); } catch (e) { }
+    try { if (window.google && google.accounts) google.accounts.id.disableAutoSelect(); } catch (e) { }
+    setSync('local'); refreshAccountUI();
+    if (this.clientId) this.loadGis().then(() => this.paint()).catch(() => { });
   },
   async signOut() {
-    if (!this.fb) return;
     if (!(await confirmBox('Sign out?', 'Your progress stays on this device. It will stop syncing to your Google account until you sign in again.', 'Sign out'))) return;
-    try { clearTimeout(saveT); if (Cloud.ref) await syncUp(); } catch (e) { }
-    try { await this.fb.auth.signOut(this.fb.au); toast('Signed out'); } catch (e) { toast('Could not sign out'); }
+    try { clearTimeout(saveT); if (Cloud.ref && Cloud.ready) await syncUp(); } catch (e) { }
+    this.forget(); toast('Signed out');
   }
 };
-function authMsg(e) {
-  const c = (e && e.code) || '';
-  if (/unauthorized-domain/.test(c)) return 'This website is not yet allowed in Firebase (Authentication → Settings → Authorized domains).';
-  if (/network/.test(c)) return 'No connection. Try again when you are online.';
-  if (/operation-not-allowed/.test(c)) return 'Google sign-in is not switched on in Firebase (Authentication → Sign-in method).';
-  return 'Sign-in failed' + (c ? ' (' + c.replace('auth/', '') + ')' : '') + '. Please try again.';
-}
-const GOOGLE_G = '<svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.6 13.3l7.9 6.1C12.4 13.7 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.7 6c4.5-4.2 6.9-10.3 6.9-17.7z"/><path fill="#FBBC05" d="M10.5 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C.9 16.6 0 20.2 0 24s.9 7.4 2.6 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.7-6c-2.1 1.4-4.9 2.3-8.2 2.3-6.3 0-11.6-4.2-13.5-10l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>';
 function accountHTML() {
   if (!Account.enabled()) return '';
   const u = Account.user;
-  if (!Account.ready) return `<div class="row small muted"><span class="trspin"></span> Checking your account…</div>`;
-  if (u) return `<div class="row" style="gap:12px">${u.photoURL ? `<img src="${esc(u.photoURL)}" alt="" width="40" height="40" referrerpolicy="no-referrer" style="border-radius:50%;flex:none">` : `<span class="logo">${esc((u.displayName || u.email || '?')[0])}</span>`}<div style="min-width:0"><b>${esc(u.displayName || 'Signed in')}</b><div class="faint small" style="overflow:hidden;text-overflow:ellipsis">${esc(u.email || '')}</div></div></div>
+  if (u) return `<div class="row" style="gap:12px">${u.picture ? `<img src="${esc(u.picture)}" alt="" width="40" height="40" referrerpolicy="no-referrer" style="border-radius:50%;flex:none">` : `<span class="logo">${esc((u.name || u.email || '?')[0])}</span>`}<div style="min-width:0"><b>${esc(u.name || 'Signed in')}</b><div class="faint small" style="overflow:hidden;text-overflow:ellipsis">${esc(u.email || '')}</div></div></div>
     <p class="muted small">Your progress syncs to this Google account, so it follows you to any phone or computer where you sign in.</p><div class="row"><button class="btn" data-signout>Sign out</button></div>`;
+  if (!Account.ready) return `<div class="row small muted"><span class="trspin"></span> Checking your account…</div>`;
   return `<p class="muted small">Sign in to keep your progress safe in the cloud and continue on any device.</p>
-    <button class="btn" data-signin ${Account.busy ? 'disabled' : ''} style="align-self:flex-start;background:#fff;color:#1f1f1f;border-color:#dadce0">${Account.busy ? '<span class="trspin"></span>' : GOOGLE_G} Sign in with Google</button>${Account.err ? `<div class="note" style="color:var(--redInk)">${esc(Account.err)}</div>` : ''}`;
+    ${Account.clientId ? (Account.busy ? `<div class="row small muted"><span class="trspin"></span> Signing in…</div>` : `<div data-gbtn style="min-height:44px"><div class="row small muted"><span class="trspin"></span> Loading Google sign-in…</div></div>`) : ''}${Account.err ? `<div class="note" style="color:var(--redInk)">${esc(Account.err)}</div>` : ''}`;
 }
-function refreshAccountUI() { $$('[data-account]').forEach(el => { el.innerHTML = accountHTML(); }); }
+function refreshAccountUI() { $$('[data-account]').forEach(el => { el.innerHTML = accountHTML(); }); Account.paint(); }
+/* pages that include the account box are drawn later (Settings, quick settings): draw Google's button there too */
+new MutationObserver(() => { if (document.querySelector('[data-gbtn]:not([data-drawn])')) Account.paint(); }).observe(document.body, { childList: true, subtree: true });
 document.addEventListener('click', e => {
-  if (e.target.closest('[data-signin]')) Account.signIn();
-  else if (e.target.closest('[data-signout]')) Account.signOut();
+  if (e.target.closest('[data-signout]')) Account.signOut();
 });
 /* ---------- merging two copies of progress (this device + account) ----------
    Progress is merged rather than one copy replacing the other, so nothing learned on
@@ -1289,6 +1299,7 @@ async function pullCloud() {
   } catch (e) {
     clearTimeout(timer);
     if (ref !== Cloud.ref) return;
+    if (e && e.code === 'signed-out' && !FRAMED) { Account.forget(); Account.err = 'Your sign-in expired. Please sign in again.'; refreshAccountUI(); return; }
     setSync(e && e.code === 'unavailable' ? 'offline' : 'error');
     console.error('Sprachwerk sync:', e && (e.code || e.message));
     /* try again later; until the account copy is read, nothing is uploaded */
