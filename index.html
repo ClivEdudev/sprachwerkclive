@@ -1310,6 +1310,7 @@ let AC = null;
 document.addEventListener('pointerdown', () => {
   try { if ('speechSynthesis' in window) { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } } catch (e) { }
   try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume(); } catch (e) { }
+  try { const a = Voice.audio(); a.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA='; a.play().catch(() => { }); } catch (e) { }
 }, { once: true, capture: true });
 function sfx(kind) {
   if (!S.settings.sfx) return;
@@ -1322,9 +1323,13 @@ function sfx(kind) {
   } catch (e) { }
 }
 
-/* ---------- VOICE: device German voice or Claude voice ---------- */
+/* ---------- VOICE: Google Deutsch everywhere (cloud copy on devices that lack it), device voice or Claude voice ---------- */
+const CLOUD_OK = !FRAMED && /^https?:$/.test(location.protocol) && !/^(localhost|127\.)/.test(location.hostname);
 const Voice = {
-  voices: [], de: null, en: null, de2: null, hq: false, tts: null, cur: 0,
+  voices: [], de: null, en: null, de2: null, hq: false, tts: null, cur: 0, _a: null, cloudDown: false,
+  audio() { return this._a || (this._a = Object.assign(new Audio(), { preload: 'auto' })); },
+  /* the laptop voice: Chrome's built-in "Google Deutsch" when this browser has it */
+  gde() { return this.voices.find(v => /^google deutsch$/i.test(v.name)) || null; },
   init() {
     if ('speechSynthesis' in window) {
       const load = () => { this.voices = speechSynthesis.getVoices() || []; this.pick(); if (location.hash === '#setup') route(); };
@@ -1345,16 +1350,23 @@ const Voice = {
     const e = S.settings.engine, hasBrowser = 'speechSynthesis' in window;
     if (e === 'claude' && this.tts) return 'claude';
     if (e === 'browser' && hasBrowser) return 'browser';
+    if ((e === 'auto' || e === 'google') && (this.gde() || (CLOUD_OK && !this.cloudDown))) return 'google';
     if (this.de && this.hq) return 'browser';
     if (this.tts) return 'claude';
     return hasBrowser ? 'browser' : 'none';
   },
-  label() { const e = this.engine(); return e === 'claude' ? 'Claude voice' : e === 'browser' ? (this.de ? this.de.name : 'Browser default voice') : 'No voice available'; },
-  stop() { this.cur++; try { speechSynthesis.cancel(); } catch (e) { } try { this.tts && this.tts.stop(); } catch (e) { } },
+  label() { const e = this.engine(); return e === 'google' ? 'Google Deutsch' + (this.gde() ? '' : ' (streamed)') : e === 'claude' ? 'Claude voice' : e === 'browser' ? (this.de ? this.de.name : 'Browser default voice') : 'No voice available'; },
+  stop() { this.cur++; try { speechSynthesis.cancel(); } catch (e) { } try { this.tts && this.tts.stop(); } catch (e) { } try { this._a && this._a.pause(); } catch (e) { } },
   /* returns a promise that resolves when speech ends */
   speak(text, o = {}) {
     const lang = o.lang || 'de', rate = (o.rate || 1) * (S.settings.rate || 1), id = ++this.cur;
     const eng = this.engine();
+    if (eng === 'google') {
+      try { this._a && this._a.pause(); } catch (e) { }
+      const g = this.gde();
+      if (g) return this.browser(text, lang, rate, Object.assign({}, o, { _v: lang === 'de' ? g : null }), id);
+      return this.cloud(text, lang, rate, o, id);
+    }
     if (eng === 'claude') {
       try { this.tts.stop(); } catch (e) { }
       try { speechSynthesis.cancel(); } catch (e) { }
@@ -1368,17 +1380,44 @@ const Voice = {
     if (eng === 'browser') return this.browser(text, lang, rate, o, id);
     return Promise.resolve();
   },
+  /* streams Google's German voice through /api/tts (Netlify function), in chunks of up to 200 characters */
+  cloud(text, lang, rate, o, id) {
+    try { speechSynthesis.cancel(); } catch (e) { }
+    const parts = []; let buf = '';
+    String(text).split(/(?<=[.!?;:,])\s+|\s+/).forEach(w => { if ((buf + ' ' + w).trim().length > 190 && buf) { parts.push(buf.trim()); buf = w; } else buf += ' ' + w; });
+    if (buf.trim()) parts.push(buf.trim());
+    const a = this.audio(), tl = lang === 'de' ? 'de' : 'en';
+    const play = q => new Promise((res, rej) => {
+      a.onended = () => res(); a.onerror = () => rej(new Error('audio'));
+      a.src = '/api/tts?tl=' + tl + '&q=' + encodeURIComponent(q);
+      a.playbackRate = clamp(rate, 0.5, 2); try { a.preservesPitch = a.webkitPreservesPitch = true; } catch (e) { }
+      const p = a.play(); if (p && p.catch) p.catch(rej);
+    });
+    return (async () => {
+      for (let i = 0; i < parts.length; i++) {
+        if (id !== this.cur) return;
+        try { await play(parts[i]); }
+        catch (e) {
+          if (id !== this.cur) return;
+          if (e && e.name === 'NotAllowedError') return; /* autoplay blocked: stay on Google voice, next tap will work */
+          this.cloudDown = true; setTimeout(() => { this.cloudDown = false; }, 60000);
+          if ('speechSynthesis' in window) return this.browser(parts.slice(i).join(' '), lang, rate, o, id);
+          return;
+        }
+      }
+    })();
+  },
   browser(text, lang, rate, o, id) {
     return new Promise(res => {
       try {
         speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(text);
-        const v = lang === 'de' ? (o.alt && this.de2 ? this.de2 : this.de) : this.en;
+        const v = o._v || (lang === 'de' ? (o.alt && this.de2 ? this.de2 : this.de) : this.en);
         if (v) u.voice = v;
         u.lang = ((lang === 'de' ? (v ? v.lang : 'de-DE') : (v ? v.lang : 'en-US')) || '').replace('_', '-');
         this._u = u;
         u.rate = clamp(rate, 0.5, 1.6);
-        if (o.alt && !this.de2) u.pitch = 0.82;
+        if (o.alt && (o._v || !this.de2)) u.pitch = 0.82;
         if (o.onWord) u.onboundary = e => { if (e.name === 'word' || e.name === undefined) o.onWord(e.charIndex); };
         let done = false; const fin = () => { if (!done) { done = true; res(); } };
         u.onend = fin; u.onerror = fin;
@@ -2249,7 +2288,7 @@ VIEWS.setup = v => {
     <div class="card stack"><h3>Appearance</h3>${appearanceHTML()}</div>
     <div class="card stack"><h3>Translator</h3>${translatorPrefsHTML()}</div>
     <div class="card stack"><h3>You</h3><label class="muted small" for="nm">Name used in greetings and dialogues</label><input id="nm" class="input" value="${esc(S.name)}" maxlength="30"><label class="muted small" for="gl">Daily goal</label><select id="gl" class="input">${[[20, 'Casual · 20 XP'], [50, 'Regular · 50 XP'], [100, 'Serious · 100 XP'], [150, 'Intense · 150 XP']].map(([n, l]) => `<option value="${n}" ${S.goal === n ? 'selected' : ''}>${l}</option>`).join('')}</select><label class="row small"><input type="checkbox" id="sfx" ${S.settings.sfx ? 'checked' : ''}> Sound effects</label></div>
-    <div class="card stack"><h3>Voice</h3><div class="note">Now speaking with: <b>${esc(Voice.label())}</b></div><label class="muted small" for="eng">Engine</label><select id="eng" class="input"><option value="auto">Automatic — best available</option><option value="browser">This device's German voice</option><option value="claude" ${Voice.tts ? '' : 'disabled'}>Claude voice${Voice.tts ? '' : ' (not available here)'}</option></select>
+    <div class="card stack"><h3>Voice</h3><div class="note">Now speaking with: <b>${esc(Voice.label())}</b></div><label class="muted small" for="eng">Engine</label><select id="eng" class="input"><option value="auto">Automatic — Google Deutsch on every device</option><option value="google">Google Deutsch (same as laptop)</option><option value="browser">This device's German voice</option><option value="claude" ${Voice.tts ? '' : 'disabled'}>Claude voice${Voice.tts ? '' : ' (not available here)'}</option></select>
     ${deV.length ? `<label class="muted small" for="vc">Device German voice</label><select id="vc" class="input">${deV.map(x => `<option value="${esc(x.voiceURI)}" ${Voice.de && Voice.de.voiceURI === x.voiceURI ? 'selected' : ''}>${esc(x.name)} (${esc(x.lang)})</option>`).join('')}</select>` : `<div class="note">No German voice installed on this device. ${Voice.tts ? 'The Claude voice is used instead.' : 'Install a German voice in your system settings (Windows: Settings → Time & language → Speech; macOS: Accessibility → Spoken content), or use Chrome/Edge which include natural German voices.'}</div>`}
     <label class="muted small" for="rt">Speed: <span id="rtv">${S.settings.rate}×</span></label><input id="rt" type="range" min="0.6" max="1.3" step="0.05" value="${S.settings.rate}"><button class="btn" data-test>${icon('speaker', 'sm')} Test: “Ich lerne jeden Tag Deutsch.”</button></div>
     <div class="card stack"><h3>Speaking & microphone</h3><div class="note">${Ear.mode === 'dictation' ? 'Pronunciation scoring uses Claude\'s dictation. The first time you tap a mic you\'ll be asked for permission.' : Ear.mode === 'native' ? 'Pronunciation scoring uses your browser\'s German speech recognition (de-DE).' : 'Speech recognition is not available in this browser. Chrome (desktop or Android) unlocks the speaking features.'}</div><p class="muted small">Scores compare what the recogniser heard with the target sentence, word by word. Green = clear, gold = close, red = not recognised. Treat it as a coach, not a judge: if a recogniser misses a word you said well, compare with the native audio and trust your ear.</p></div>
