@@ -24,3 +24,7 @@ Same setup as ClivEdu: Google's sign-in button on the page, a Netlify function (
 4. Optional: `AUTH_SECRET` (long random text). Without it the site makes its own and stores it.
 
 Progress from different devices is merged (never overwritten), on the device and again on the server.
+
+## Slide lessons
+
+`lessons.js` holds the grammar slide decks (ClivEdu style: formula, colour-coded examples with English, a "Warum?" slide on where the form comes from, quizzes, a checklist). Open them at `#lessons`. To add a lesson, copy one entry in `lessons.js`; the slide types are listed at the top of the file. Bump `CACHE` in `sw.js` after changing it so installed copies update.

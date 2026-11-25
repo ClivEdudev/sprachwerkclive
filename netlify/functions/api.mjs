@@ -51,7 +51,7 @@ async function verifyGoogle(credential) {
 
 /* ---------- progress merging (the same rules as the app, so no device can wipe another) ---------- */
 const obj = o => (o && typeof o === "object" && !Array.isArray(o) ? o : {});
-const hasProgress = s => !!(s && (s.xp || ["cards", "units", "games", "missions", "shadow", "skills"].some(k => Object.keys(obj(s[k])).length)));
+const hasProgress = s => !!(s && (s.xp || ["cards", "units", "games", "missions", "shadow", "skills", "lessons"].some(k => Object.keys(obj(s[k])).length)));
 export function mergeProgress(a, b) {
   if (!b) return a; if (!a) return b;
   if ((a.resetAt || 0) > (b.updated || 0)) return a;
@@ -65,6 +65,7 @@ export function mergeProgress(a, b) {
   pick("shadow", (x, y) => Math.max(x, y));
   pick("games", (x, y, id) => (id === "memory" ? Math.min(x, y) : Math.max(x, y)));
   pick("skills", (x, y) => ((x.t || 0) >= (y.t || 0) ? x : y));
+  pick("lessons", (x, y) => ({ ...((x.t || 0) >= (y.t || 0) ? x : y), seen: Math.max(x.seen || 0, y.seen || 0), done: !!(x.done || y.done) }));
   pick("units", (x, y) => ({ ...x, ...y, steps: { ...obj(x.steps), ...obj(y.steps) }, best: Math.max(x.best || 0, y.best || 0), done: !!(x.done || y.done) }));
   const daySum = Object.values(m.days).reduce((n, v) => n + (+v || 0), 0);
   m.xp = Math.max(a.xp || 0, b.xp || 0, daySum);

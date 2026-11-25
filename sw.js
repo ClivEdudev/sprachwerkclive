@@ -1,6 +1,6 @@
 /* Sprachwerk service worker — offline app shell + cached fonts */
-const CACHE = 'sprachwerk-202611251230';
-const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-180.png', './favicon-48.png'];
+const CACHE = 'sprachwerk-202611251500';
+const SHELL = ['./', './index.html', './lessons.js', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-180.png', './favicon-48.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {
@@ -9,7 +9,7 @@ self.addEventListener('fetch', e => {
   if (u.origin === location.origin && (u.pathname.startsWith('/api/') || u.pathname === '/tts')) return; /* API and voice audio: straight to network */
   if (u.origin === location.origin) {
     if (r.mode === 'navigate') { /* network first so new versions arrive; cached copy when offline */
-      e.respondWith(fetch(r).then(res => { const cp = res.clone(); caches.open(CACHE).then(c => c.put('./index.html', cp)); return res; }).catch(() => caches.match('./index.html')));
+      e.respondWith(fetch(r).then(res => { const cp = res.clone(); caches.open(CACHE).then(c => c.put('./index.html', './lessons.js', cp)); return res; }).catch(() => caches.match('./index.html')));
       return;
     }
     e.respondWith(caches.match(r).then(m => m || fetch(r)));
