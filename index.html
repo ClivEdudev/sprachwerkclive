@@ -1115,7 +1115,7 @@ const KEY = 'sprachwerk.v1';
 const DEFAULT = () => ({ v: 1, name: 'Clive', goal: 50, xp: 0, days: {}, cards: {}, units: {}, skills: {}, games: {}, missions: {}, shadow: {}, settings: { engine: 'auto', voiceURI: '', rate: 1, sfx: true, theme: 'system', bg: 'aurora', trLang: 'en', trDir: 'de', trAuto: true }, trh: [], updated: 0, created: Date.now() });
 function hydrate(o) { const d = DEFAULT(); const s = Object.assign(d, o || {}); s.settings = Object.assign(DEFAULT().settings, (o && o.settings) || {}); return s; }
 let S = (() => { try { const r = localStorage.getItem(KEY); if (r) return hydrate(JSON.parse(r)); } catch (e) { } return DEFAULT(); })();
-const Cloud = { ref: null, busy: false, dirty: false, status: 'local' };
+const Cloud = { ref: null, busy: false, dirty: false, status: 'local', ready: false };
 let saveT;
 function save() {
   S.updated = Date.now();
@@ -1131,7 +1131,8 @@ function setSync(st) {
 }
 async function syncUp() {
   if (!Cloud.ref) return;
-  if (Cloud.busy) { Cloud.dirty = true; return; }
+  /* never upload before this device has read the account's copy: an empty new device must not overwrite it */
+  if (!Cloud.ready || Cloud.busy) { Cloud.dirty = true; return; }
   Cloud.busy = true; setSync('syncing');
   try { await Cloud.ref.set({ s: JSON.parse(JSON.stringify(S)), at: S.updated }); setSync('synced'); }
   catch (e) { setSync(e && e.code === 'unavailable' ? 'offline' : 'error'); }
@@ -1185,13 +1186,14 @@ const Account = {
     try { await auth.getRedirectResult(au); } catch (e) { this.err = authMsg(e); }
     auth.onAuthStateChanged(au, async u => {
       this.ready = true; this.user = u || null; refreshAccountUI();
+      Cloud.ready = false; clearTimeout(Cloud.retry);
       if (!u) { Cloud.ref = null; return setSync('local'); }
       const { fs, db } = this.fb; const d = fs.doc(db, 'users', u.uid);
       Cloud.ref = {
         set: o => fs.setDoc(d, { at: o.at, json: JSON.stringify(o.s), name: u.displayName || '', v: 1 }),
         get: async () => { const sn = await fs.getDoc(d); const x = sn.exists() ? sn.data() : null; return { exists: !!x, data: () => x && { at: x.at, s: JSON.parse(x.json || 'null') } }; }
       };
-      await pullCloud(true);
+      await pullCloud();
     });
   },
   async signIn() {
@@ -1233,25 +1235,65 @@ document.addEventListener('click', e => {
   if (e.target.closest('[data-signin]')) Account.signIn();
   else if (e.target.closest('[data-signout]')) Account.signOut();
 });
-async function pullCloud(askOnConflict) {
+/* ---------- merging two copies of progress (this device + account) ----------
+   Progress is merged rather than one copy replacing the other, so nothing learned on
+   either device is lost. Settings, name, goal and translator history come from the newer copy. */
+const hasProgress = s => !!(s && (s.xp || ['cards', 'units', 'games', 'missions', 'shadow', 'skills'].some(k => s[k] && Object.keys(s[k]).length)));
+function mergeProgress(a, b) {
+  a = hydrate(a); b = hydrate(b);
+  /* a reset on one device wins over older progress from the other */
+  if ((a.resetAt || 0) > (b.updated || 0)) return a;
+  if ((b.resetAt || 0) > (a.updated || 0)) return b;
+  const nw = (a.updated || 0) >= (b.updated || 0) ? a : b;
+  const m = hydrate(JSON.parse(JSON.stringify(nw)));
+  const keys = k => new Set([...Object.keys(a[k] || {}), ...Object.keys(b[k] || {})]);
+  const pick = (k, f) => { const o = {}; keys(k).forEach(id => { const x = (a[k] || {})[id], y = (b[k] || {})[id]; o[id] = x == null ? y : y == null ? x : f(x, y, id); }); m[k] = o; };
+  pick('cards', (x, y) => ((x.l || 0) >= (y.l || 0) ? x : y));
+  pick('days', (x, y) => Math.max(x, y));
+  pick('missions', (x, y) => Math.max(x, y));
+  pick('shadow', (x, y) => Math.max(x, y));
+  pick('games', (x, y, id) => (id === 'memory' ? Math.min(x, y) : Math.max(x, y)));
+  pick('skills', (x, y) => ((x.t || 0) >= (y.t || 0) ? x : y));
+  pick('units', (x, y) => ({ ...x, ...y, steps: { ...(x.steps || {}), ...(y.steps || {}) }, best: Math.max(x.best || 0, y.best || 0), done: !!(x.done || y.done) }));
+  const daySum = Object.values(m.days).reduce((n, v) => n + (+v || 0), 0);
+  m.xp = Math.max(a.xp || 0, b.xp || 0, daySum);
+  m.created = Math.min(a.created || Date.now(), b.created || Date.now());
+  m.resetAt = Math.max(a.resetAt || 0, b.resetAt || 0) || undefined;
+  m.updated = Math.max(a.updated || 0, b.updated || 0);
+  return m;
+}
+const progressSig = s => JSON.stringify([s.xp, s.cards, s.units, s.games, s.missions, s.shadow, s.days, s.skills]);
+async function pullCloud() {
+  if (!Cloud.ref) return;
+  const ref = Cloud.ref;
   const timer = setTimeout(() => setSync('offline'), 10000);
   try {
     setSync('syncing');
-    const snap = await Cloud.ref.get();
+    const snap = await ref.get();
     clearTimeout(timer);
+    if (ref !== Cloud.ref) return; /* signed out / switched account meanwhile */
     const body = snap.exists ? snap.data() : null;
-    const localHas = !!(S.xp || Object.keys(S.cards).length);
-    let useRemote = !!(body && body.s && (body.at || 0) > (S.updated || 0));
-    if (askOnConflict && body && body.s && localHas && (body.s.xp || 0) !== (S.xp || 0)) {
-      useRemote = await confirmBox('Which progress should we keep?', `Your Google account has ${(body.s.xp || 0).toLocaleString('en')} XP saved; this device has ${(S.xp || 0).toLocaleString('en')} XP. Keep the account's progress? Choose Cancel to keep this device's progress instead and save it to your account.`, "Use account's");
-    }
-    if (useRemote) {
-      S = hydrate(JSON.parse(JSON.stringify(body.s)));
+    const remote = body && body.s;
+    let push = false;
+    if (hasProgress(remote) || (remote && !hasProgress(S))) {
+      const before = progressSig(S), look = JSON.stringify(S.settings), merged = mergeProgress(S, remote);
+      const gained = progressSig(merged) !== before, restyle = JSON.stringify(merged.settings) !== look;
+      push = progressSig(merged) !== progressSig(hydrate(remote)) || (merged.updated || 0) > (body.at || 0);
+      S = merged;
       try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { }
-      setSync('synced'); applyLook(); refreshShell(); route();
-      toast('Progress restored from your account');
-    } else if (S.updated) { Cloud.busy = false; await syncUp(); } else setSync('synced');
-  } catch (e) { clearTimeout(timer); setSync(e && e.code === 'unavailable' ? 'offline' : 'error'); }
+      if (gained || restyle) { applyLook(); refreshShell(); route(); }
+      if (gained) toast(hasProgress(remote) ? 'Progress loaded from your Google account' : 'Progress synced');
+    } else push = !!(S.updated || hasProgress(S));
+    Cloud.ready = true; Cloud.dirty = false; Cloud.busy = false;
+    if (push) await syncUp(); else setSync('synced');
+  } catch (e) {
+    clearTimeout(timer);
+    if (ref !== Cloud.ref) return;
+    setSync(e && e.code === 'unavailable' ? 'offline' : 'error');
+    console.error('Sprachwerk sync:', e && (e.code || e.message));
+    /* try again later; until the account copy is read, nothing is uploaded */
+    clearTimeout(Cloud.retry); Cloud.retry = setTimeout(pullCloud, 30000);
+  }
 }
 async function initCloud() {
   if (!FRAMED) return Account.init();
@@ -1260,7 +1302,7 @@ async function initCloud() {
   let id = null; try { id = await user.id(); } catch (e) { }
   if (!id) return setSync('local');
   try { Cloud.ref = db.doc('data/users/' + id + '/progress'); } catch (e) { return setSync('local'); }
-  await pullCloud(false);
+  await pullCloud();
 }
 
 /* ---------- XP, streak, skills ---------- */
@@ -2271,7 +2313,7 @@ VIEWS.setup = v => {
   $('[data-file]', v) && ($('[data-file]', v).onchange = e => { const f = e.target.files[0]; if (f) f.text().then(restore); e.target.value = ''; });
   $('[data-inst]', v) && ($('[data-inst]', v).onclick = async () => { const p = window.__swInstall; if (!p) return; p.prompt(); try { await p.userChoice; } catch (e) { } window.__swInstall = null; route(); });
   $('[data-imp]', v).onclick = () => { const b = $('[data-impbox]', v); b.innerHTML = `<textarea class="input" placeholder="Paste a backup here"></textarea><button class="btn pri" style="margin-top:8px">Restore</button>`; $('button', b).onclick = () => restore($('textarea', b).value); };
-  $('[data-reset]', v).onclick = async () => { if (await confirmBox('Reset all progress?', 'XP, streaks, learned words and station results will be erased everywhere. This cannot be undone.', 'Reset')) { const keep = S.settings, nm = S.name; S = DEFAULT(); S.settings = keep; S.name = nm; save(); syncUp(); refreshShell(); toast('Progress reset'); route(); } };
+  $('[data-reset]', v).onclick = async () => { if (await confirmBox('Reset all progress?', 'XP, streaks, learned words and station results will be erased everywhere. This cannot be undone.', 'Reset')) { const keep = S.settings, nm = S.name; S = DEFAULT(); S.settings = keep; S.name = nm; S.resetAt = Date.now(); save(); syncUp(); refreshShell(); toast('Progress reset'); route(); } };
 };
 
 /* ================= GENUS RADAR (gender prediction) ================= */
@@ -2669,6 +2711,7 @@ Ear.init();
 refreshShell();
 route();
 initCloud();
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Cloud.ref && Cloud.ready && !Cloud.busy) pullCloud(); });
 /* standalone website extras (only active in the Netlify build, which ships a manifest + service worker) */
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); window.__swInstall = e; $$('[data-install]').forEach(x => { x.hidden = false; }); });
 if (!FRAMED && 'serviceWorker' in navigator && document.querySelector('link[rel="manifest"]') && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
