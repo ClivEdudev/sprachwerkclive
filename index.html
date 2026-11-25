@@ -448,6 +448,122 @@ textarea.input{min-height:120px;font:13px/1.4 ui-monospace,monospace}
 }
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
+/* ---------- slide lessons (ClivEdu-style decks) ---------- */
+.lgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.lcard{display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:var(--r);border:1px solid var(--line);background:var(--panel);text-decoration:none;position:relative;transition:transform .15s,border-color .15s}
+.lcard:hover{transform:translateY(-2px);border-color:var(--line2)}
+.lcard .num{font:500 13px var(--disp);letter-spacing:.08em;text-transform:uppercase;color:var(--goldInk)}
+.lcard b{font:500 20px/1.15 var(--disp)}
+.lcard .de{font:400 17px var(--disp);color:var(--ink2)}
+.lcard .lbar{height:4px;border-radius:4px;background:var(--panel2);overflow:hidden;margin-top:auto}.lcard .lbar i{display:block;height:100%;background:var(--gold)}
+.lcard.done .lbar i{background:var(--ok)}
+.lcard .st{position:absolute;top:16px;right:16px}
+.lbanner{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:var(--r);border:1px solid var(--line);background:linear-gradient(90deg,var(--goldSoft),transparent 70%),var(--panel);text-decoration:none;margin-bottom:16px}
+.lbanner .ic{width:26px;height:26px;color:var(--goldInk);flex:none}
+.lbanner b{font:500 17px var(--disp);display:block}
+.deck{position:relative;display:flex;flex-direction:column;gap:12px;max-width:1180px;margin:0 auto}
+.deck .dtop{display:flex;align-items:center;gap:12px}
+.deck .dbar{flex:1;height:6px;border-radius:6px;background:var(--panel2);overflow:hidden}.deck .dbar i{display:block;height:100%;background:var(--gold);transition:width .3s}
+.deck .dcount{font:500 14px var(--disp);color:var(--ink2);min-width:54px;text-align:right}
+.stage{container-type:inline-size;position:relative;border-radius:22px;border:1px solid var(--line);background:var(--panel);box-shadow:var(--shadow);overflow:hidden;height:clamp(440px,calc(100vh - 236px),780px);width:100%;margin:0 auto;touch-action:pan-y}
+.stage::before{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(90deg,#111 0 33.3%,var(--red) 33.3% 66.6%,var(--gold) 66.6%)}
+.sl{position:absolute;inset:0;padding:clamp(18px,4.2cqw,56px) clamp(18px,5cqw,64px) clamp(26px,4.6cqw,60px);display:flex;flex-direction:column;gap:clamp(10px,2cqw,22px);overflow:auto;animation:slin .32s ease both}
+.sl.back{animation-name:slback}
+@keyframes slin{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
+@keyframes slback{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
+.sl .eb{font:500 clamp(12px,1.5cqw,16px) var(--disp);letter-spacing:.14em;text-transform:uppercase;color:var(--goldInk)}
+.sl h2{font:450 clamp(24px,3.6cqw,46px)/1.08 var(--disp)}
+.sl .sub{color:var(--ink2);font-size:clamp(14px,1.7cqw,19px)}
+.sl .hl{color:var(--goldInk)}.sl .gm{color:var(--blueInk)}.sl .gf{color:var(--redInk)}.sl .gn{color:var(--greenInk)}
+.sl b.s{color:var(--blueInk);font-weight:600}.sl b.v{color:var(--goldInk);font-weight:600}.sl b.e{color:var(--redInk);font-weight:700}
+.sl b.x{color:var(--violet);font-weight:600}.sl b.n{color:var(--redInk);font-weight:600}
+.sl b.m{color:var(--blueInk);font-weight:600}.sl b.f{color:var(--redInk);font-weight:600}.sl b.nt{color:var(--greenInk);font-weight:600}
+.sl .notes{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto}
+.sl .notes span{font-size:clamp(13px,1.45cqw,16px);padding:6px 12px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);color:var(--ink2)}
+.sl .notes span::before{content:"→ ";color:var(--goldInk)}
+.sl [data-say]{cursor:pointer}
+.sl .spk{display:inline-grid;place-items:center;width:clamp(30px,3.4cqw,40px);height:clamp(30px,3.4cqw,40px);border-radius:50%;border:1px solid var(--line2);background:var(--panel2);flex:none;color:var(--ink2)}
+.sl .spk .ic{width:55%;height:55%}
+.sl [data-say].speaking .spk,.sl .spk.speaking{border-color:var(--gold);color:var(--goldInk);box-shadow:0 0 0 4px var(--goldSoft)}
+/* cover */
+.sl.k-cover{justify-content:center;align-items:flex-start;background:radial-gradient(60cqw 40cqw at 90% 10%,var(--goldSoft),transparent 70%)}
+.sl.k-cover .big{font:400 clamp(36px,8cqw,104px)/1 var(--disp);letter-spacing:-.02em}
+.sl.k-cover .lead{font:400 clamp(17px,2.6cqw,30px) var(--disp);color:var(--ink2)}
+.sl .chips{display:flex;flex-wrap:wrap;gap:10px}
+.sl .chip2{display:inline-flex;align-items:center;gap:10px;padding:10px 16px 10px 10px;border-radius:999px;border:1px solid var(--line2);background:var(--panel2);font:400 clamp(15px,2cqw,22px) var(--disp)}
+/* goals */
+.sl .goals{display:grid;gap:clamp(8px,1.4cqw,16px)}
+.sl .goal{display:grid;grid-template-columns:auto 1fr auto;gap:clamp(10px,2cqw,22px);align-items:center;padding:clamp(10px,1.6cqw,18px) clamp(12px,2cqw,22px);border-radius:16px;background:var(--panel2);border:1px solid var(--line)}
+.sl .goal .gn2{font:500 clamp(20px,3cqw,36px) var(--disp);color:var(--goldInk);width:1.4em;text-align:center}
+.sl .goal .gt2{font:500 clamp(15px,2cqw,22px) var(--disp)}
+.sl .goal .gx{font-size:clamp(14px,1.8cqw,19px);color:var(--ink2)}.sl .goal .gx i{color:var(--ink3);font-style:normal}
+/* formula */
+.sl.k-formula{background:linear-gradient(180deg,var(--panel2),var(--panel))}
+.sl .ftitle{font:500 clamp(22px,3.5cqw,44px)/1.1 var(--disp);padding:clamp(10px,1.6cqw,18px) clamp(14px,2.2cqw,26px);border-radius:16px;border:1px dashed var(--line2);align-self:flex-start}
+.sl .frows{display:grid;gap:clamp(10px,1.6cqw,18px)}
+.sl .frow{display:flex;flex-wrap:wrap;align-items:center;gap:clamp(6px,1cqw,12px)}
+.sl .fchip{font:450 clamp(18px,2.8cqw,36px)/1.15 var(--disp);padding:.18em .55em;border-radius:.4em;background:var(--panel2);border:1px solid var(--line2)}
+.sl .fchip.r-s{background:color-mix(in srgb,var(--blue) 18%,transparent);border-color:color-mix(in srgb,var(--blue) 45%,transparent)}
+.sl .fchip.r-v{background:color-mix(in srgb,var(--gold) 24%,transparent);border-color:color-mix(in srgb,var(--gold) 60%,transparent)}
+.sl .fchip.r-t{background:color-mix(in srgb,var(--green) 18%,transparent);border-color:color-mix(in srgb,var(--green) 45%,transparent)}
+.sl .fchip.r-x{background:color-mix(in srgb,var(--violet) 20%,transparent);border-color:color-mix(in srgb,var(--violet) 50%,transparent)}
+.sl .fchip.r-n,.sl .fchip.r-e{background:color-mix(in srgb,var(--red) 20%,transparent);border-color:color-mix(in srgb,var(--red) 50%,transparent)}
+.sl .fchip.r-e{margin-left:calc(-1 * clamp(6px,1cqw,12px) + 2px)}
+.sl .frow .fen{color:var(--ink3);font-size:clamp(13px,1.6cqw,18px);flex-basis:100%;padding-left:2px}
+/* why */
+.sl.k-why{background:radial-gradient(70cqw 50cqw at 100% 100%,var(--goldSoft),transparent 70%)}
+.sl .wgrid{display:grid;grid-template-columns:1.5fr 1fr;gap:clamp(14px,3cqw,36px);align-items:start}
+.sl .wbody{display:grid;gap:clamp(8px,1.3cqw,14px);font-size:clamp(15px,1.9cqw,21px);line-height:1.5}
+.sl .wbody b{color:var(--goldInk);font-weight:600}
+.sl .pairs{display:grid;gap:8px}
+.sl .pair{display:grid;grid-template-columns:1fr auto 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-radius:14px;background:var(--panel2);border:1px solid var(--line);font:400 clamp(14px,1.8cqw,20px) var(--disp)}
+.sl .pair .pe{color:var(--ink2)}.sl .pair .ar{color:var(--goldInk)}.sl .pair .pd{font-weight:500}
+.sl .ph{font:500 12px var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);display:flex;justify-content:space-between;padding:0 12px}
+/* table */
+.sl table.st{width:100%;border-collapse:separate;border-spacing:0;font-size:clamp(14px,2cqw,22px)}
+.sl table.st th{text-align:left;font:500 clamp(12px,1.4cqw,15px) var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);padding:6px 12px;border-bottom:1px solid var(--line2)}
+.sl table.st td{padding:clamp(6px,1cqw,11px) 12px;border-bottom:1px solid var(--line)}
+.sl table.st td.say{font-family:var(--disp);font-weight:500}
+.sl table.st td.say:hover,.sl table.st td.speaking{color:var(--goldInk)}
+/* cols */
+.sl .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:clamp(10px,1.6cqw,18px)}
+.sl .col{border-radius:16px;border:1px solid var(--line);background:var(--panel2);padding:clamp(12px,1.8cqw,20px);display:flex;flex-direction:column;gap:10px;border-top:5px solid var(--tc,var(--gold))}
+.sl .col .cl{font:500 clamp(13px,1.5cqw,16px) var(--body);letter-spacing:.05em;text-transform:uppercase;color:var(--tc,var(--goldInk))}
+.sl .col .ln{font:400 clamp(16px,2.3cqw,26px)/1.3 var(--disp);display:flex;gap:8px;align-items:center}
+.sl .col .cen{color:var(--ink3);font-size:clamp(13px,1.5cqw,16px);margin-top:auto}
+/* examples */
+.sl .exs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:clamp(8px,1.2cqw,14px)}
+.sl .exr{display:flex;gap:12px;align-items:center;padding:clamp(10px,1.4cqw,16px);border-radius:14px;background:var(--panel2);border:1px solid var(--line);text-align:left;width:100%}
+.sl .exr .d{font:400 clamp(16px,2.2cqw,25px)/1.25 var(--disp)}
+.sl .exr .t{color:var(--ink3);font-size:clamp(13px,1.5cqw,16px)}
+/* quiz */
+.sl .qz{display:grid;gap:8px}
+.sl .revall{position:absolute;top:clamp(14px,3.6cqw,48px);right:clamp(16px,4.6cqw,60px)}
+.sl .qr{display:grid;grid-template-columns:auto 1fr 1fr;gap:12px;align-items:center;padding:6px 12px;border-radius:14px;background:var(--panel2);border:1px solid var(--line)}
+.sl .qr .qn{font:500 clamp(14px,1.7cqw,18px) var(--disp);color:var(--ink3);width:1.6em}
+.sl .qr .qp{font:400 clamp(15px,1.9cqw,22px) var(--disp)}
+.sl .qr .qa{justify-self:stretch;min-height:40px;border-radius:12px;border:1px dashed var(--line2);background:transparent;font:500 clamp(15px,1.9cqw,22px) var(--disp);color:var(--ink3);padding:6px 12px;text-align:left}
+.sl .qr .qa.open{border-style:solid;border-color:color-mix(in srgb,var(--green) 50%,transparent);background:color-mix(in srgb,var(--green) 12%,transparent);color:var(--ink)}
+/* check */
+.sl .chk{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:10px}
+.sl .chk button{display:flex;gap:12px;align-items:center;text-align:left;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--panel2);font-size:clamp(15px,1.9cqw,20px)}
+.sl .chk button .bx{width:28px;height:28px;border-radius:8px;border:2px solid var(--line2);display:grid;place-items:center;flex:none}
+.sl .chk button.on .bx{background:var(--ok);border-color:var(--ok);color:#06140d}
+.sl .chk button .bx .ic{width:18px;height:18px;opacity:0}.sl .chk button.on .bx .ic{opacity:1}
+.deck .dnav{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.deck .dnav .hint{color:var(--ink3);font-size:13px;text-align:center}
+.deck:fullscreen{max-width:none;padding:18px;background:var(--bg);justify-content:center}
+.deck:fullscreen .stage{max-height:calc(100vh - 140px);width:auto;max-width:100%}
+@media (max-width:760px){
+ .stage{height:auto;min-height:calc(100svh - 300px);border-radius:18px}
+ .stage .sl{position:relative;inset:auto;min-height:calc(100svh - 300px);overflow:visible}
+ .deck{padding-bottom:20px}
+ .sl .wgrid{grid-template-columns:1fr}
+ .sl .revall{position:static;align-self:flex-start;margin-top:auto}
+ .sl .qr{grid-template-columns:auto 1fr}.sl .qr .qa{grid-column:1/-1}
+ .sl .goal{grid-template-columns:auto 1fr}.sl .goal .gx{grid-column:2}
+ .deck .dnav .hint{display:none}
+}
 </style>
 </head>
 <body>
@@ -457,6 +573,7 @@ textarea.input{min-height:120px;font:13px/1.4 ui-monospace,monospace}
     <div class="grp">Learn</div>
     <a class="nav" data-nav="home" href="#home"><svg class="ic" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Start</a>
     <a class="nav" data-nav="path" href="#path"><svg class="ic" viewBox="0 0 24 24"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 6h8a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h8"/></svg>Linie A1</a>
+    <a class="nav" data-nav="lessons" href="#lessons"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M12 16v4M8 20h8M10 8.5v4l3.5-2z"/></svg>Slide lessons</a>
     <a class="nav" data-nav="review" href="#review"><svg class="ic" viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/></svg>Review</a>
     <a class="nav" data-nav="practice" href="#practice"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/></svg>Practice</a>
     <a class="nav" data-nav="translate" href="#translate"><svg class="ic" viewBox="0 0 24 24"><path d="M4 5h8M8 3v2M10 5c-.5 4-3 7-6 8.5M6 9c1 2 3 3.5 5 4.5"/><path d="M12 21l4.5-10L21 21M13.5 18h6"/></svg>Übersetzer</a>
@@ -487,6 +604,7 @@ textarea.input{min-height:120px;font:13px/1.4 ui-monospace,monospace}
     <main id="view" class="view"><noscript>Sprachwerk needs JavaScript to run.</noscript></main>
   </div>
 </div>
+<script src="lessons.js"></script>
 <nav class="mobnav" aria-label="Main">
   <a data-nav="home" href="#home"><svg class="ic" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Start</a>
   <a data-nav="path" href="#path"><svg class="ic" viewBox="0 0 24 24"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 6h8a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h8"/></svg>Linie A1</a>
@@ -1019,6 +1137,7 @@ const dkey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).
 const hash = s => { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
 
 const ICONS = {
+  slides: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M12 16v4M8 20h8M10 8.5v4l3.5-2z"/>',
   translate: '<path d="M4 5h8M8 3v2M10 5c-.5 4-3 7-6 8.5M6 9c1 2 3 3.5 5 4.5"/><path d="M12 21l4.5-10L21 21M13.5 18h6"/>',
   gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
   swap: '<path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/>',
@@ -1112,7 +1231,7 @@ function greetDe(name) {
 
 /* ---------- state & persistence ---------- */
 const KEY = 'sprachwerk.v1';
-const DEFAULT = () => ({ v: 1, name: 'Clive', goal: 50, xp: 0, days: {}, cards: {}, units: {}, skills: {}, games: {}, missions: {}, shadow: {}, settings: { engine: 'auto', voiceURI: '', rate: 1, sfx: true, theme: 'system', bg: 'aurora', trLang: 'en', trDir: 'de', trAuto: true }, trh: [], updated: 0, created: Date.now() });
+const DEFAULT = () => ({ v: 1, name: 'Clive', goal: 50, xp: 0, days: {}, cards: {}, units: {}, skills: {}, games: {}, missions: {}, shadow: {}, lessons: {}, settings: { engine: 'auto', voiceURI: '', rate: 1, sfx: true, theme: 'system', bg: 'aurora', trLang: 'en', trDir: 'de', trAuto: true }, trh: [], updated: 0, created: Date.now() });
 function hydrate(o) { const d = DEFAULT(); const s = Object.assign(d, o || {}); s.settings = Object.assign(DEFAULT().settings, (o && o.settings) || {}); return s; }
 let S = (() => { try { const r = localStorage.getItem(KEY); if (r) return hydrate(JSON.parse(r)); } catch (e) { } return DEFAULT(); })();
 const Cloud = { ref: null, busy: false, dirty: false, status: 'local', ready: false };
@@ -1248,7 +1367,7 @@ document.addEventListener('click', e => {
 /* ---------- merging two copies of progress (this device + account) ----------
    Progress is merged rather than one copy replacing the other, so nothing learned on
    either device is lost. Settings, name, goal and translator history come from the newer copy. */
-const hasProgress = s => !!(s && (s.xp || ['cards', 'units', 'games', 'missions', 'shadow', 'skills'].some(k => s[k] && Object.keys(s[k]).length)));
+const hasProgress = s => !!(s && (s.xp || ['cards', 'units', 'games', 'missions', 'shadow', 'skills', 'lessons'].some(k => s[k] && Object.keys(s[k]).length)));
 function mergeProgress(a, b) {
   a = hydrate(a); b = hydrate(b);
   /* a reset on one device wins over older progress from the other */
@@ -1264,6 +1383,7 @@ function mergeProgress(a, b) {
   pick('shadow', (x, y) => Math.max(x, y));
   pick('games', (x, y, id) => (id === 'memory' ? Math.min(x, y) : Math.max(x, y)));
   pick('skills', (x, y) => ((x.t || 0) >= (y.t || 0) ? x : y));
+  pick('lessons', (x, y) => ({ ...((x.t || 0) >= (y.t || 0) ? x : y), seen: Math.max(x.seen || 0, y.seen || 0), done: !!(x.done || y.done) }));
   pick('units', (x, y) => ({ ...x, ...y, steps: { ...(x.steps || {}), ...(y.steps || {}) }, best: Math.max(x.best || 0, y.best || 0), done: !!(x.done || y.done) }));
   const daySum = Object.values(m.days).reduce((n, v) => n + (+v || 0), 0);
   m.xp = Math.max(a.xp || 0, b.xp || 0, daySum);
@@ -1272,7 +1392,7 @@ function mergeProgress(a, b) {
   m.updated = Math.max(a.updated || 0, b.updated || 0);
   return m;
 }
-const progressSig = s => JSON.stringify([s.xp, s.cards, s.units, s.games, s.missions, s.shadow, s.days, s.skills]);
+const progressSig = s => JSON.stringify([s.xp, s.cards, s.units, s.games, s.missions, s.shadow, s.days, s.skills, s.lessons]);
 async function pullCloud() {
   if (!Cloud.ref) return;
   const ref = Cloud.ref;
@@ -1777,8 +1897,99 @@ function renderQ(slot, q) {
 let CLEAN = [];
 const onLeave = f => CLEAN.push(f);
 const SHORT = [['Laute', 'Sounds'], ['Hallo!', 'Greetings'], ['Woher?', 'Origins'], ['Zahlen', 'Numbers'], ['Familie', 'Family'], ['Essen', 'Food'], ['Mein Tag', 'Daily life'], ['Stadt', 'City'], ['Wohnen', 'Home'], ['Einkaufen', 'Shopping'], ['Freizeit', 'Free time'], ['Körper', 'Health'], ['Reisen', 'Travel']];
-const TITLES = { home: 'Start', path: 'Linie A1', review: 'Daily review', practice: 'Practice', games: 'Games', sounds: 'Sound Lab', missions: 'Berlin Missions', shadow: 'Shadow Studio', lazy: 'Lazy Mode', galaxy: 'Memory Galaxy', bridge: 'English Bridge', radar: 'Genus Radar', stats: 'Progress', method: 'The method', setup: 'Settings', more: 'Everything', translate: 'Übersetzer' };
+const TITLES = { home: 'Start', path: 'Linie A1', review: 'Daily review', practice: 'Practice', games: 'Games', sounds: 'Sound Lab', missions: 'Berlin Missions', shadow: 'Shadow Studio', lazy: 'Lazy Mode', galaxy: 'Memory Galaxy', bridge: 'English Bridge', radar: 'Genus Radar', stats: 'Progress', method: 'The method', setup: 'Settings', more: 'Everything', translate: 'Übersetzer', lessons: 'Slide lessons' };
 const VIEWS = {};
+
+/* ============ SLIDE LESSONS — ClivEdu-style decks: formula, examples, "Warum?" ============ */
+const LESSONS = (window.SW_LESSONS || []);
+const lessonById = id => LESSONS.find(l => l.id === id);
+const lessonState = id => S.lessons[id] || (S.lessons[id] = { seen: 0, at: 0, done: false });
+const plain = h => String(h).replace(/<[^>]+>/g, '').replace(/\s*→\s*/g, ', ').replace(/\s+/g, ' ').trim();
+const spk = () => `<span class="spk">${icon('speaker')}</span>`;
+function lessonProgress(l) { const s = S.lessons[l.id]; if (!s) return 0; return s.done ? 1 : Math.min(1, (s.seen + 1) / l.slides.length); }
+
+function slideHTML(sl, l) {
+  const notes = sl.notes ? `<div class="notes">${sl.notes.map(n => `<span>${n}</span>`).join('')}</div>` : '';
+  const head = (sl.eb ? `<div class="eb">${sl.eb}</div>` : '') + (sl.title && sl.t !== 'cover' && sl.t !== 'formula' ? `<h2>${sl.title}</h2>` : '') + (sl.sub ? `<p class="sub">${sl.sub}</p>` : '');
+  switch (sl.t) {
+    case 'cover': return `<div class="eb">Lektion ${l.n} · Slide lesson</div><div class="big">${sl.title}</div><div class="lead">${sl.lead}</div>
+      <div class="chips" style="margin-top:12px">${(sl.chips || []).map(c => `<button class="chip2" data-say="${esc(c)}">${spk()}${esc(c)}</button>`).join('')}</div>`;
+    case 'goals': return `<div class="eb">Today’s goals · Heute</div><h2>By the end you can…</h2><div class="goals">${sl.items.map((g, i) => `<div class="goal"><span class="gn2">${i + 1}</span><span class="gt2">${g[0]}</span><button class="gx exr" style="padding:6px 10px;width:auto;border:0;background:transparent" data-say="${esc(plain(g[1]))}">${spk()}<span><b style="font-family:var(--disp);font-weight:500;color:var(--ink)">${g[1]}</b><br><i>${g[2]}</i></span></button></div>`).join('')}</div>`;
+    case 'formula': return `<div class="eb">${sl.eb || 'The rule'} · Die Formel</div><div class="ftitle">${sl.title}</div>
+      <div class="frows">${sl.rows.map(r => { const joined = r.chips.reduce((o, c, i) => o + (i && c[1] !== 'e' ? ' ' : '') + c[0], ''); return `<div class="frow" data-say="${esc(joined)}">${r.chips.map(c => `<span class="fchip r-${c[1]}">${c[0]}</span>`).join('')}${spk()}<span class="fen">${r.en}</span></div>`; }).join('')}</div>${notes}`;
+    case 'why': return `${head}<div class="wgrid"><div class="wbody">${sl.body.map(p => `<p>${p}</p>`).join('')}</div>
+      ${sl.pairs ? `<div class="pairs"><div class="ph"><span>English</span><span>Deutsch</span></div>${sl.pairs.map(p => `<button class="pair" data-say="${esc(plain(p[1]))}"><span class="pe">${p[0]}</span><span class="ar">↔</span><span class="pd">${p[1]}</span>${spk()}</button>`).join('')}</div>` : ''}</div>${notes}`;
+    case 'table': return `${head}<div style="overflow-x:auto"><table class="st"><tr>${sl.head.map(h => `<th>${h}</th>`).join('')}</tr>${sl.rows.map(r => `<tr>${r.map((c, j) => j === sl.say ? `<td class="say" data-say="${esc(plain(c))}">${c}</td>` : `<td>${c}</td>`).join('')}</tr>`).join('')}</table></div>${notes}`;
+    case 'cols': return `${head}<div class="cols">${sl.cols.map(c => `<div class="col" style="--tc:var(--${c.tone || 'gold'}Ink,var(--violet))"><div class="cl">${c.label}</div>${c.lines.map(x => `<div class="ln" data-say="${esc(plain(x.split('→').pop()))}">${x}</div>`).join('')}<div class="cen">${c.en}</div></div>`).join('')}</div>${notes}`;
+    case 'examples': return `${head || '<h2>Examples · Beispiele</h2>'}<div class="exs">${sl.items.map(e => `<button class="exr" data-say="${esc(plain(e[0]))}">${spk()}<span><span class="d">${e[0]}</span><br><span class="t">${e[1]}</span></span></button>`).join('')}</div>${notes}`;
+    case 'quiz': return `<div class="eb">Your turn · Du bist dran</div>${head}<div class="qz">${sl.rows.map((r, i) => `<div class="qr"><span class="qn">${i + 1}</span><span class="qp">${r[0]}</span><button class="qa" data-a="${esc(r[1])}"${sl.nosay ? ' data-nosay="1"' : ''}>Tap to reveal</button></div>`).join('')}</div><button class="btn sm revall" data-revall>${icon('eye')}Reveal all</button>`;
+    case 'check': { const st = lessonState(l.id); return `<div class="eb">Check · Kannst du das?</div><h2>Now I can…</h2><div class="chk">${sl.items.map(x => `<button>${'<span class="bx">' + icon('check') + '</span>'}<span>${x}</span></button>`).join('')}</div>
+      <div class="row" style="margin-top:auto;gap:12px"><button class="btn pri lg" data-finish>${st.done ? 'Finish again' : 'Finish lesson · +25 XP'}</button><span class="muted small">Tick what you can do, then finish.</span></div>`; }
+  }
+  return '';
+}
+
+VIEWS.lessons = v => {
+  const doneN = LESSONS.filter(l => S.lessons[l.id] && S.lessons[l.id].done).length;
+  const next = LESSONS.find(l => !(S.lessons[l.id] && S.lessons[l.id].done)) || LESSONS[0];
+  v.innerHTML = `<div class="row between" style="align-items:flex-end;margin-bottom:22px"><div><span class="tag gold">${doneN}/${LESSONS.length} finished</span><h1 style="margin-top:12px">Slide lessons</h1>
+    <p class="muted" style="margin-top:8px;max-width:64ch">German grammar the ClivEdu way. Every lesson gives you the <b>formula</b>, colour-coded <b>examples</b> with English, and a <b>Warum?</b> slide that shows where the form comes from and why it is so. Tap any German line to hear it.</p></div>
+    ${next ? `<a class="btn pri lg" href="#lesson-${next.id}">${icon('play')}${S.lessons[next.id] ? 'Continue' : 'Start'}: ${esc(next.title)}</a>` : ''}</div>
+    <div class="lgrid">${LESSONS.map(l => { const p = lessonProgress(l), d = S.lessons[l.id] && S.lessons[l.id].done; return `<a class="lcard${d ? ' done' : ''}" href="#lesson-${l.id}"><span class="num">Lektion ${l.n} · Station ${l.unit}</span>${d ? `<span class="st tag" style="color:var(--ok)">${icon('check')} done</span>` : ''}<b>${esc(l.title)}</b><span class="de">${esc(l.de)}</span><span class="muted small">${esc(l.lead)}</span><span class="faint tiny">${l.slides.length} slides</span><span class="lbar"><i style="width:${Math.round(p * 100)}%"></i></span></a>`; }).join('')}</div>
+    <div class="card flat" style="margin-top:22px"><b style="font:500 17px var(--disp)">How to use a slide lesson</b><p class="muted small" style="margin-top:6px">Arrow keys, space or swipe to move. Read the formula aloud, tap examples to hear Google Deutsch, and answer each quiz out loud before you reveal. Press F for full screen.</p></div>`;
+};
+
+VIEWS.lesson = (v, id) => {
+  const l = lessonById(id); if (!l) { location.hash = '#lessons'; return; }
+  const st = lessonState(l.id), N = l.slides.length;
+  let i = st.done ? 0 : Math.min(st.at || 0, N - 1);
+  v.innerHTML = `<div class="deck"><div class="dtop"><a class="ibtn sm" href="#lessons" aria-label="Close lesson" title="All lessons">${icon('x')}</a><div class="dbar"><i></i></div><span class="dcount"></span><button class="ibtn sm" data-fs aria-label="Full screen" title="Full screen (F)">${icon('monitor')}</button></div>
+    <div class="stage" aria-live="polite"></div>
+    <div class="dnav"><button class="btn" data-prev>${icon('left')}Back</button><span class="hint">← → or swipe · tap German to hear it</span><button class="btn pri" data-next>Next${icon('right')}</button></div></div>`;
+  const deck = $('.deck', v), stage = $('.stage', v);
+  const show = (k, dir = 1) => {
+    i = Math.max(0, Math.min(N - 1, k)); Voice.stop();
+    const sl = l.slides[i];
+    stage.innerHTML = `<section class="sl k-${sl.t}${dir < 0 ? ' back' : ''}">${slideHTML(sl, l)}</section>`;
+    $('.dbar i', v).style.width = ((i + 1) / N * 100) + '%'; $('.dcount', v).textContent = `${i + 1} / ${N}`;
+    $('[data-prev]', v).disabled = i === 0; $('[data-next]', v).hidden = i === N - 1;
+    if (i > st.seen) st.seen = i; st.at = i; st.t = Date.now(); save();
+    wire(stage, sl);
+    if (deck.getBoundingClientRect().top < 0) deck.scrollIntoView({ block: 'start' });
+  };
+  const reveal = b => { if (b.classList.contains('open')) { if (!b.dataset.nosay) Voice.speak(b.dataset.a); return; } b.classList.add('open'); b.textContent = b.dataset.a; if (!b.dataset.nosay) Voice.speak(b.dataset.a); };
+  const wire = (box, sl) => {
+    $$('.qa', box).forEach(b => b.onclick = () => reveal(b));
+    const ra = $('[data-revall]', box); if (ra) ra.onclick = () => $$('.qa', box).forEach(b => { b.classList.add('open'); b.textContent = b.dataset.a; });
+    $$('.chk button', box).forEach(b => b.onclick = () => { b.classList.toggle('on'); sfx('tick'); });
+    const fin = $('[data-finish]', box);
+    if (fin) fin.onclick = () => {
+      const first = !st.done; st.done = true; st.seen = N - 1; st.at = 0; st.t = Date.now(); save(); addXP(first ? 25 : 5, fin); sfx('win');
+      const nx = LESSONS[LESSONS.indexOf(l) + 1];
+      stage.innerHTML = `<section class="sl k-cover"><div class="eb">Fertig! Lesson finished</div><div class="big">Sehr gut, ${esc(S.name || 'Clive')}!</div><div class="lead">${first ? '+25 XP. ' : ''}You finished “${esc(l.title)}”.</div>
+        <div class="row" style="gap:12px;margin-top:14px">${nx ? `<a class="btn pri lg" href="#lesson-${nx.id}">Next: ${esc(nx.title)}${icon('right')}</a>` : ''}<a class="btn lg" href="#unit-${l.unit}">Practise in Station ${l.unit}</a><a class="btn lg ghost" href="#lessons">All lessons</a></div></section>`;
+      $('[data-next]', v).hidden = true;
+    };
+  };
+  $('[data-prev]', v).onclick = () => show(i - 1, -1);
+  $('[data-next]', v).onclick = () => show(i + 1, 1);
+  const fs = () => { try { if (document.fullscreenElement) document.exitFullscreen(); else deck.requestFullscreen && deck.requestFullscreen(); } catch (e) { } };
+  $('[data-fs]', v).onclick = fs;
+  const keys = e => {
+    if (e.target.matches('input,textarea,select') || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || (e.key === ' ' && !e.target.closest('button'))) { e.preventDefault(); if (i < N - 1) show(i + 1, 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); if (i > 0) show(i - 1, -1); }
+    else if (e.key === 'f' || e.key === 'F') fs();
+    else if (e.key === 'Home') show(0, -1);
+  };
+  document.addEventListener('keydown', keys);
+  let tx = null, ty = 0;
+  stage.addEventListener('touchstart', e => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true });
+  stage.addEventListener('touchend', e => { if (tx == null) return; const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty; tx = null; if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.4) { if (dx < 0 && i < N - 1) show(i + 1, 1); else if (dx > 0 && i > 0) show(i - 1, -1); } }, { passive: true });
+  CLEAN.push(() => { document.removeEventListener('keydown', keys); if (document.fullscreenElement) { try { document.exitFullscreen(); } catch (e) { } } });
+  $('#crumb').textContent = `Lektion ${l.n} · ${l.title}`;
+  show(i);
+};
 function route() {
   CLEAN.forEach(f => { try { f(); } catch (e) { } }); CLEAN = [];
   Voice.stop(); Ear.stop();
@@ -1786,7 +1997,7 @@ function route() {
   const [base, arg] = h.includes('-') ? [h.slice(0, h.indexOf('-')), h.slice(h.indexOf('-') + 1)] : [h, null];
   const fn = VIEWS[base] || VIEWS.home;
   const old = $('#view'); const v = document.createElement('main'); v.id = 'view'; v.className = 'view'; old.replaceWith(v);
-  const navKey = base === 'unit' ? 'path' : base === 'mission' ? 'missions' : base === 'game' ? 'games' : base;
+  const navKey = base === 'lesson' ? 'lessons' : base === 'unit' ? 'path' : base === 'mission' ? 'missions' : base === 'game' ? 'games' : base;
   $$('[data-nav]').forEach(a => a.classList.toggle('on', a.dataset.nav === navKey));
   const ms = ['home', 'path', 'review', 'games'];
   $$('.mobnav a').forEach(a => a.classList.toggle('on', a.dataset.nav === (ms.includes(navKey) ? navKey : 'more')));
@@ -1846,6 +2057,7 @@ VIEWS.home = v => {
   </div>
   <section class="sec"><h2>Labs</h2>
     <div class="tiles">
+      ${tile('#lessons', 'slides', 'Slide lessons', 'Grammar as slides: the formula, examples, and why German works that way.', 'var(--goldInk)')}
       ${tile('#missions', 'missions', 'Berlin Missions', 'Voiced role-plays: café, train station, doctor, hotel, a party.', 'var(--redInk)')}
       ${tile('#shadow', 'mic', 'Shadow Studio', 'Speak along with native audio, karaoke-style, then get scored.', 'var(--goldInk)')}
       ${tile('#galaxy', 'galaxy', 'Memory Galaxy', 'Every word is a star. Watch your forgetting curve live.', 'var(--blueInk)')}
@@ -1956,7 +2168,8 @@ function stepLearn(box, u) {
   draw();
 }
 function stepGrammar(box, u) {
-  box.innerHTML = `<div class="grid g2">${u.grammar.map(g => `<div class="card gcard stack"><h3>${esc(g.t)}</h3><p class="muted">${g.p}</p>${g.table ? `<table class="gt">${g.table.map(r => `<tr>${r.map((c, j) => { const pl = c.replace(/<[^>]+>/g, ''); return j === 1 && /^[A-Za-zÄÖÜäöüß ,.!?…]{2,}$/.test(pl) ? `<td data-say="${esc(pl)}" title="Listen">${c}</td>` : `<td>${c}</td>`; }).join('')}</tr>`).join('')}</table>` : ''}${g.ex ? `<div class="stack" style="gap:8px;margin-top:4px">${g.ex.map(e => `<div class="ex">${/^[A-ZÄÖÜa-zäöüß]/.test(e[0]) && !e[0].includes('/') && !e[0].includes('→') ? sayBtn(e[0], 'sm') : ''}<div><div class="de">${esc(e[0])}</div><div class="tr">${esc(e[1])}</div></div></div>`).join('')}</div>` : ''}</div>`).join('')}</div>
+  const ls = LESSONS.filter(l => l.unit === u.id);
+  box.innerHTML = `${ls.map(l => `<a class="lbanner" href="#lesson-${l.id}">${icon('slides')}<span style="flex:1"><b>Slide lesson: ${esc(l.title)}</b><span class="muted small">${esc(l.lead)}</span></span>${S.lessons[l.id] && S.lessons[l.id].done ? `<span class="tag" style="color:var(--ok)">${icon('check')} done</span>` : `<span class="tag gold">${l.slides.length} slides</span>`}</a>`).join('')}<div class="grid g2">${u.grammar.map(g => `<div class="card gcard stack"><h3>${esc(g.t)}</h3><p class="muted">${g.p}</p>${g.table ? `<table class="gt">${g.table.map(r => `<tr>${r.map((c, j) => { const pl = c.replace(/<[^>]+>/g, ''); return j === 1 && /^[A-Za-zÄÖÜäöüß ,.!?…]{2,}$/.test(pl) ? `<td data-say="${esc(pl)}" title="Listen">${c}</td>` : `<td>${c}</td>`; }).join('')}</tr>`).join('')}</table>` : ''}${g.ex ? `<div class="stack" style="gap:8px;margin-top:4px">${g.ex.map(e => `<div class="ex">${/^[A-ZÄÖÜa-zäöüß]/.test(e[0]) && !e[0].includes('/') && !e[0].includes('→') ? sayBtn(e[0], 'sm') : ''}<div><div class="de">${esc(e[0])}</div><div class="tr">${esc(e[1])}</div></div></div>`).join('')}</div>` : ''}</div>`).join('')}</div>
   <div class="card row between" style="margin-top:16px"><div><b style="font:500 18px var(--disp)">Practise this grammar</b><div class="muted small">${u.gaps.length} gap-fills and ${u.build.length} sentence builders</div></div><button class="btn pri" data-go>Start ${icon('right', 'sm')}</button></div>`;
   $('[data-go]', box).onclick = () => runSession(box, shuffle([...u.gaps.map(Q.gap), ...u.build.map(Q.build)]), { title: `Grammar · ${u.de}`, back: '#unit-' + u.id, doneLabel: 'Continue to dialogue', onFinish: r => { unitTab[u.id] = 'dialog'; if (r.score >= 50) { markStep(u, 'grammar'); addXP(20); } }, extra: sc => sc < 50 ? '<p class="muted" style="margin-top:10px">Score 50% or more to tick off this stop — re-read the cards above and try again whenever you like.</p>' : '' });
 }
@@ -2157,7 +2370,7 @@ VIEWS.method = v => {
 /* ================= MORE (mobile menu) ================= */
 VIEWS.more = v => {
   v.innerHTML = `<h1>Everything</h1><div class="tiles" style="margin-top:18px">
-  ${tile('#translate', 'translate', 'Übersetzer', 'Translate German and English, hear it, save it.', 'var(--blueInk)')}${tile('#practice', 'practice', 'Practice', 'Drill any skill on any word pool.', 'var(--goldInk)')}${tile('#missions', 'missions', 'Berlin Missions', 'Voiced role-play scenarios.', 'var(--redInk)')}${tile('#shadow', 'mic', 'Shadow Studio', 'Speak along, get scored.', 'var(--goldInk)')}${tile('#lazy', 'lazy', 'Lazy Mode', 'Hands-free listening loop.', 'var(--blueInk)')}${tile('#galaxy', 'galaxy', 'Memory Galaxy', 'Your memory as stars.', 'var(--blueInk)')}${tile('#bridge', 'bridge', 'English Bridge', 'Decode German via English.', 'var(--greenInk)')}${tile('#radar', 'radar', 'Genus Radar', 'Predict der/die/das.', 'var(--violet)')}${tile('#sounds', 'sound', 'Sound Lab', 'Alphabet and sounds.', 'var(--blueInk)')}${tile('#stats', 'stats', 'Progress', 'Stats, streaks, forecast.', 'var(--goldInk)')}${tile('#method', 'method', 'The method', 'The research behind it.', 'var(--greenInk)')}${tile('#setup', 'setup', 'Settings', 'Voice, goal, backup.', 'var(--ink2)')}</div>`;
+  ${tile('#lessons', 'slides', 'Slide lessons', 'Formula, examples and the why.', 'var(--goldInk)')}${tile('#translate', 'translate', 'Übersetzer', 'Translate German and English, hear it, save it.', 'var(--blueInk)')}${tile('#practice', 'practice', 'Practice', 'Drill any skill on any word pool.', 'var(--goldInk)')}${tile('#missions', 'missions', 'Berlin Missions', 'Voiced role-play scenarios.', 'var(--redInk)')}${tile('#shadow', 'mic', 'Shadow Studio', 'Speak along, get scored.', 'var(--goldInk)')}${tile('#lazy', 'lazy', 'Lazy Mode', 'Hands-free listening loop.', 'var(--blueInk)')}${tile('#galaxy', 'galaxy', 'Memory Galaxy', 'Your memory as stars.', 'var(--blueInk)')}${tile('#bridge', 'bridge', 'English Bridge', 'Decode German via English.', 'var(--greenInk)')}${tile('#radar', 'radar', 'Genus Radar', 'Predict der/die/das.', 'var(--violet)')}${tile('#sounds', 'sound', 'Sound Lab', 'Alphabet and sounds.', 'var(--blueInk)')}${tile('#stats', 'stats', 'Progress', 'Stats, streaks, forecast.', 'var(--goldInk)')}${tile('#method', 'method', 'The method', 'The research behind it.', 'var(--greenInk)')}${tile('#setup', 'setup', 'Settings', 'Voice, goal, backup.', 'var(--ink2)')}</div>`;
 };
 
 
