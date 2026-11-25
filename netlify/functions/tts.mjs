@@ -1,5 +1,5 @@
 /* Sprachwerk voice: serves Google's German voice (the same voice Chrome on a laptop calls "Google Deutsch")
-   so phones and computers all hear the identical voice. GET /api/tts?tl=de&q=Hallo  ->  audio/mpeg */
+   so phones and computers all hear the identical voice. GET /tts?tl=de&q=Hallo  ->  audio/mpeg */
 export default async (req) => {
   const u = new URL(req.url);
   const q = (u.searchParams.get('q') || '').slice(0, 200);
@@ -14,4 +14,4 @@ export default async (req) => {
     return new Response('upstream error', { status: 502 });
   }
 };
-export const config = { path: '/api/tts' };
+export const config = { path: '/tts' };
