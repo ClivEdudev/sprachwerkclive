@@ -1485,6 +1485,8 @@ document.addEventListener('pointerdown', () => {
   try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume(); } catch (e) { }
   try { const a = Voice.audio(); a.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA='; a.play().catch(() => { }); } catch (e) { }
 }, { once: true, capture: true });
+/* the sound-effect context is rebuilt after mic use; let any tap wake it again */
+document.addEventListener('pointerdown', () => { try { if (AC && AC.state === 'suspended') AC.resume(); } catch (e) { } }, { capture: true, passive: true });
 function sfx(kind) {
   if (!S.settings.sfx) return;
   try {
@@ -1530,8 +1532,16 @@ const Voice = {
   },
   label() { const e = this.engine(); return e === 'google' ? 'Google Deutsch' + (this.gde() ? '' : ' (streamed)') : e === 'claude' ? 'Claude voice' : e === 'browser' ? (this.de ? this.de.name : 'Browser default voice') : 'No voice available'; },
   stop() { this.cur++; try { speechSynthesis.cancel(); } catch (e) { } try { this.tts && this.tts.stop(); } catch (e) { } try { this._a && this._a.pause(); } catch (e) { } },
+  micOffAt: 0,
   /* returns a promise that resolves when speech ends */
   speak(text, o = {}) {
+    /* right after the mic closes, the phone is still switching audio back from "call" mode (and Bluetooth from headset to music mode):
+       wait a moment so the voice comes out in full quality instead of the muffled call sound */
+    const wait = this.micOffAt + 600 - Date.now();
+    if (wait > 0) { const id = ++this.cur; return sleep(wait).then(() => id === this.cur ? this._speak(text, o) : undefined); }
+    return this._speak(text, o);
+  },
+  _speak(text, o = {}) {
     const lang = o.lang || 'de', rate = (o.rate || 1) * (S.settings.rate || 1), id = ++this.cur;
     const eng = this.engine();
     if (eng === 'google') {
@@ -1612,6 +1622,19 @@ const sayBtn = (t, cls = '', slow = false) => `<button class="ibtn ${cls}" data-
 
 /* ---------- EARS: pronunciation via dictation capability or native recognition ---------- */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+/* Using the mic puts the phone into a voice-call audio mode (low-quality, "closed" sound, Bluetooth switches to headset mode).
+   Players created while the mic was on stay stuck in that mode, so after listening we switch back to plain playback
+   and rebuild the audio players fresh. */
+const MicAudio = {
+  before() { try { if (navigator.audioSession) navigator.audioSession.type = 'play-and-record'; } catch (e) { } },
+  after() {
+    Voice.micOffAt = Date.now();
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { }
+    try { speechSynthesis.cancel(); } catch (e) { }
+    try { if (Voice._a) { Voice._a.pause(); Voice._a.removeAttribute('src'); Voice._a.load(); } } catch (e) { }
+    try { if (AC) { AC.close().catch(() => { }); AC = null; } } catch (e) { AC = null; }
+  }
+};
 const Ear = {
   dict: null, mode: null, sess: null,
   async init() {
@@ -1632,7 +1655,8 @@ const Ear = {
     if (this.sess) { this.stop(); return; }
     if (!this.mode) { cb.done({ text: '', alts: [], error: 'Speech recognition isn\'t available in this browser. Chrome works best.' }); return; }
     let text = '', alts = [], over = false, idle;
-    const finish = () => { if (over) return; over = true; clearTimeout(idle); clearTimeout(hard); this.sess = null; cb.done({ text: text.trim(), alts }); };
+    let rec = null;
+    const finish = () => { if (over) return; over = true; clearTimeout(idle); clearTimeout(hard); this.sess = null; try { rec && rec.abort(); } catch (e) { } MicAudio.after(); cb.done({ text: text.trim(), alts }); };
     const hard = setTimeout(() => this.stop(), 9000);
     if (this.mode === 'dictation') {
       this.sess = {
@@ -1640,12 +1664,12 @@ const Ear = {
         final: t => { text += ' ' + t; cb.partial && cb.partial(text.trim()); clearTimeout(idle); idle = setTimeout(() => this.stop(), 1100); },
         end: finish, stop: () => { this.dict.stop().catch(() => { }).finally(() => setTimeout(finish, 300)); }
       };
-      Voice.stop();
-      this.dict.start().catch(err => { this.sess = null; over = true; clearTimeout(hard); cb.done({ text: '', alts: [], error: err && err.code === 'not_granted' ? 'Microphone access was declined.' : 'Could not start listening.' }); });
+      Voice.stop(); MicAudio.before();
+      this.dict.start().catch(err => { this.sess = null; over = true; clearTimeout(hard); MicAudio.after(); cb.done({ text: '', alts: [], error: err && err.code === 'not_granted' ? 'Microphone access was declined.' : 'Could not start listening.' }); });
       return;
     }
     if (this.mode === 'native') {
-      const r = new SR(); r.lang = 'de-DE'; r.interimResults = true; r.maxAlternatives = 5; r.continuous = false;
+      const r = rec = new SR(); r.lang = 'de-DE'; r.interimResults = true; r.maxAlternatives = 5; r.continuous = false;
       this.sess = { stop: () => { try { r.stop(); } catch (e) { } } };
       r.onresult = e => {
         let s = ''; alts = [];
@@ -1654,10 +1678,10 @@ const Ear = {
       };
       r.onerror = e => {
         const msg = { 'not-allowed': 'Microphone access is blocked. Allow the mic for this site in your browser (padlock icon in the address bar).', 'service-not-allowed': 'This browser blocks speech recognition here. Try Chrome.', 'audio-capture': 'No microphone was found.', network: 'Speech recognition needs an internet connection.' }[e.error];
-        if (msg) { this.sess = null; over = true; clearTimeout(hard); cb.done({ text: '', alts: [], error: msg }); }
+        if (msg) { this.sess = null; over = true; clearTimeout(hard); MicAudio.after(); cb.done({ text: '', alts: [], error: msg }); }
       };
       r.onend = finish;
-      Voice.stop();
+      Voice.stop(); MicAudio.before();
       try { r.start(); } catch (e) { finish(); }
     }
   },
