@@ -605,6 +605,7 @@ textarea.input{min-height:120px;font:13px/1.4 ui-monospace,monospace}
   </div>
 </div>
 <script src="lessons.js"></script>
+<script src="cid-connect.js"></script>
 <nav class="mobnav" aria-label="Main">
   <a data-nav="home" href="#home"><svg class="ic" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Start</a>
   <a data-nav="path" href="#path"><svg class="ic" viewBox="0 0 24 24"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 6h8a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h8"/></svg>Linie A1</a>
@@ -1274,10 +1275,11 @@ async function claudeUse(name) {
   if (!(await claudeReady())) return null;
   try { return await window.claude.use(name); } catch (e) { return null; }
 }
-/* ---------- Google sign-in + progress sync on the standalone website (same approach as ClivEdu) ----------
-   Google's own sign-in button (Google Identity Services) gives us an ID token; the Netlify function
-   /api checks it with Google and stores progress in Netlify Blobs. The Google client ID lives in the
-   GOOGLE_CLIENT_ID environment variable on Netlify; /api/config hands it to the page. */
+/* ---------- c-ID sign-in + progress sync on the standalone website ----------
+   Sign-in goes through c-ID, the one Clive account (cid-connect.js → the hub on clivesystems).
+   Progress is saved to the c-ID. The old Google sign-in below is only read once, to move old progress over.
+   (Old notes: the Google client ID lived in the
+   GOOGLE_CLIENT_ID environment variable on Netlify; /api/config hands it to the page.) */
 const AUTH_KEY = 'sprachwerk.auth';
 const api = async (path, opt = {}) => {
   const tok = Account.token;
@@ -1289,62 +1291,50 @@ const api = async (path, opt = {}) => {
   return body;
 };
 const Account = {
-  ready: false, user: null, token: '', busy: false, err: '', clientId: null, gis: null,
+  ready: false, user: null, busy: false, err: '',
   enabled: () => !FRAMED,
+  get token() { return ''; },
   async init() {
-    try { const a = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); if (a && a.token) { this.token = a.token; this.user = a.user || {}; } } catch (e) { }
-    if (this.user) this.connect();
-    try { const c = await api('/config'); this.clientId = c.googleClientId || null; }
-    catch (e) { this.err = 'Could not reach the sync server (offline?)'; }
-    if (!this.clientId && !this.err) this.err = 'Google sign-in is not switched on yet (GOOGLE_CLIENT_ID is missing on Netlify).';
-    this.ready = true; refreshAccountUI();
-    if (!this.user && this.clientId) this.loadGis().then(() => this.paint()).catch(() => { this.err = 'Could not load Google sign-in (offline?)'; refreshAccountUI(); });
-    if (!this.user) setSync('local');
-  },
-  loadGis() {
-    if (!this.gis) this.gis = new Promise((res, rej) => {
-      if (window.google && google.accounts && google.accounts.id) return res();
-      const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true;
-      s.onload = () => res(); s.onerror = () => { this.gis = null; rej(new Error('gis')); }; document.head.appendChild(s);
-    }).then(() => { google.accounts.id.initialize({ client_id: this.clientId, callback: r => this.onCredential(r), auto_select: false, ux_mode: 'popup' }); });
-    return this.gis;
-  },
-  /* draw Google's button into every empty [data-gbtn] slot */
-  paint() {
-    if (!this.gis || !(window.google && google.accounts && google.accounts.id)) return;
-    $$('[data-gbtn]:not([data-drawn])').forEach(el => {
-      el.dataset.drawn = '1'; el.innerHTML = '';
-      try { google.accounts.id.renderButton(el, { type: 'standard', theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill', logo_alignment: 'left' }); } catch (e) { }
-    });
-  },
-  async onCredential(r) {
-    this.busy = true; this.err = ''; refreshAccountUI();
-    try {
-      const out = await api('/auth/google', { method: 'POST', body: JSON.stringify({ credential: r.credential }) });
-      this.token = out.token; this.user = out.user || {};
-      try { localStorage.setItem(AUTH_KEY, JSON.stringify({ token: this.token, user: this.user })); } catch (e) { }
-      this.busy = false; refreshAccountUI(); toast('Signed in as ' + (this.user.name || this.user.email || 'you'));
+    if (!window.CID) { this.err = 'c-ID could not load. Check your connection.'; this.ready = true; setSync('local'); refreshAccountUI(); return; }
+    let old = null; try { old = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); } catch (e) { }
+    await CID.init({ app: 'sprachwerk', name: 'Sprachwerk' });
+    CID.bar({ position: 'right:14px;bottom:14px', mobile: 'right:10px;bottom:62px' });
+    this.user = CID.user; this.err = CID.error || '';
+    if (this.user) {
+      if (old && old.token) await this.migrate(old.token);
       this.connect();
-    } catch (e) { this.busy = false; this.err = e.code === 'unavailable' ? 'No connection to the sync server. Try again when you are online.' : 'Sign-in failed. Please try again.'; refreshAccountUI(); }
+      if (CID.fresh) toast('Signed in with c-ID ' + CID.number());
+    } else setSync('local');
+    this.ready = true; refreshAccountUI();
   },
+  /* one time: bring progress saved under the old Google sign-in into the c-ID */
+  async migrate(oldTok) {
+    try {
+      const r = await fetch('/api/progress', { headers: { authorization: 'Bearer ' + oldTok } });
+      const x = r.ok ? await r.json() : null;
+      if (x && x.s && hasProgress(x.s)) { S = mergeProgress(S, x.s); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } applyLook(); refreshShell(); route(); toast('Your Google progress moved into your c-ID'); }
+    } catch (e) { }
+    try { localStorage.removeItem(AUTH_KEY); } catch (e) { }
+  },
+  paint() { },
+  signIn() { CID.signIn(); },
   connect() {
     Cloud.ready = false; clearTimeout(Cloud.retry);
+    const wrap = p => p.catch(e => { const x = new Error((e && e.error) || 'error'); x.code = e && e.status === 401 ? 'signed-out' : e && e.status ? String(e.status) : 'unavailable'; throw x; });
     Cloud.ref = {
-      set: o => api('/progress', { method: 'PUT', body: JSON.stringify({ at: o.at, s: o.s }) }),
-      get: async () => { const x = await api('/progress'); return { exists: !!(x && x.s), data: () => (x && x.s ? { at: x.at, s: x.s } : null) }; }
+      set: o => wrap(CID.save({ at: o.at, s: o.s })),
+      get: async () => { const x = await wrap(CID.load()); const d = x && x.data; return { exists: !!(d && d.s), data: () => (d && d.s ? { at: d.at, s: d.s } : null) }; }
     };
     pullCloud();
   },
   forget() {
     clearTimeout(saveT); clearTimeout(Cloud.retry);
-    Cloud.ref = null; Cloud.ready = false; this.token = ''; this.user = null;
-    try { localStorage.removeItem(AUTH_KEY); } catch (e) { }
-    try { if (window.google && google.accounts) google.accounts.id.disableAutoSelect(); } catch (e) { }
+    Cloud.ref = null; Cloud.ready = false; this.user = null;
+    if (window.CID) CID.signOut();
     setSync('local'); refreshAccountUI();
-    if (this.clientId) this.loadGis().then(() => this.paint()).catch(() => { });
   },
   async signOut() {
-    if (!(await confirmBox('Sign out?', 'Your progress stays on this device. It will stop syncing to your Google account until you sign in again.', 'Sign out'))) return;
+    if (!(await confirmBox('Sign out?', 'Your progress stays on this device. It will stop saving to your c-ID until you sign in again.', 'Sign out'))) return;
     try { clearTimeout(saveT); if (Cloud.ref && Cloud.ready) await syncUp(); } catch (e) { }
     this.forget(); toast('Signed out');
   }
@@ -1352,17 +1342,19 @@ const Account = {
 function accountHTML() {
   if (!Account.enabled()) return '';
   const u = Account.user;
-  if (u) return `<div class="row" style="gap:12px">${u.picture ? `<img src="${esc(u.picture)}" alt="" width="40" height="40" referrerpolicy="no-referrer" style="border-radius:50%;flex:none">` : `<span class="logo">${esc((u.name || u.email || '?')[0])}</span>`}<div style="min-width:0"><b>${esc(u.name || 'Signed in')}</b><div class="faint small" style="overflow:hidden;text-overflow:ellipsis">${esc(u.email || '')}</div></div></div>
-    <p class="muted small">Your progress syncs to this Google account, so it follows you to any phone or computer where you sign in.</p><div class="row"><button class="btn" data-signout>Sign out</button></div>`;
-  if (!Account.ready) return `<div class="row small muted"><span class="trspin"></span> Checking your account…</div>`;
-  return `<p class="muted small">Sign in to keep your progress safe in the cloud and continue on any device.</p>
-    ${Account.clientId ? (Account.busy ? `<div class="row small muted"><span class="trspin"></span> Signing in…</div>` : `<div data-gbtn style="min-height:44px"><div class="row small muted"><span class="trspin"></span> Loading Google sign-in…</div></div>`) : ''}${Account.err ? `<div class="note" style="color:var(--redInk)">${esc(Account.err)}</div>` : ''}`;
+  if (u) {
+    const av = window.CID ? CID.avatar(u) : '';
+    return `<div class="row" style="gap:12px">${av ? `<img src="${esc(av)}" alt="" width="40" height="40" style="border-radius:50%;flex:none;object-fit:cover">` : `<span class="logo">${esc((u.name || '?')[0])}</span>`}<div style="min-width:0"><b>${esc(u.name || 'Signed in')}</b><div class="faint small">c-ID ${esc(window.CID ? CID.number(u) : '')}</div></div></div>
+    <p class="muted small">Your progress saves to your c-ID, so it follows you to any phone or computer, and to every Clive app.</p><div class="row"><a class="btn" href="${esc(window.CID ? CID.hub : '')}/me.html" target="_blank" rel="noopener">My c-ID card</a><button class="btn" data-signout>Sign out</button></div>`;
+  }
+  if (!Account.ready) return `<div class="row small muted"><span class="trspin"></span> Checking your c-ID…</div>`;
+  return `<p class="muted small">Sign in with your c-ID to keep your progress safe and continue on any device. c-ID is one sign-in for every Clive app; you get it through Telegram.</p>
+    <div class="row"><button class="btn pri" data-cidsignin>Sign in with c-ID</button></div>${Account.err ? `<div class="note" style="color:var(--redInk)">${esc(Account.err)}</div>` : ''}`;
 }
 function refreshAccountUI() { $$('[data-account]').forEach(el => { el.innerHTML = accountHTML(); }); Account.paint(); }
-/* pages that include the account box are drawn later (Settings, quick settings): draw Google's button there too */
-new MutationObserver(() => { if (document.querySelector('[data-gbtn]:not([data-drawn])')) Account.paint(); }).observe(document.body, { childList: true, subtree: true });
 document.addEventListener('click', e => {
   if (e.target.closest('[data-signout]')) Account.signOut();
+  if (e.target.closest('[data-cidsignin]')) Account.signIn();
 });
 /* ---------- merging two copies of progress (this device + account) ----------
    Progress is merged rather than one copy replacing the other, so nothing learned on
@@ -1412,7 +1404,7 @@ async function pullCloud() {
       S = merged;
       try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { }
       if (gained || restyle) { applyLook(); refreshShell(); route(); }
-      if (gained) toast(hasProgress(remote) ? 'Progress loaded from your Google account' : 'Progress synced');
+      if (gained) toast(hasProgress(remote) ? 'Progress loaded from your c-ID' : 'Progress synced');
     } else push = !!(S.updated || hasProgress(S));
     Cloud.ready = true; Cloud.dirty = false; Cloud.busy = false;
     if (push) await syncUp(); else setSync('synced');
